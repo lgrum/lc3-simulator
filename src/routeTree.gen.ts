@@ -11,8 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as Lc3SimulatorRouteImport } from './routes/lc3-simulator'
 import { Route as DemoI18nRouteImport } from './routes/demo.i18n'
-import { Route as DemoTableRouteImport } from './routes/demo/table'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,49 +24,49 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Lc3SimulatorRoute = Lc3SimulatorRouteImport.update({
+  id: '/lc3-simulator',
+  path: '/lc3-simulator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoI18nRoute = DemoI18nRouteImport.update({
   id: '/demo/i18n',
   path: '/demo/i18n',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoTableRoute = DemoTableRouteImport.update({
-  id: '/demo/table',
-  path: '/demo/table',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/lc3-simulator': typeof Lc3SimulatorRoute
   '/demo/i18n': typeof DemoI18nRoute
-  '/demo/table': typeof DemoTableRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/lc3-simulator': typeof Lc3SimulatorRoute
   '/demo/i18n': typeof DemoI18nRoute
-  '/demo/table': typeof DemoTableRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/lc3-simulator': typeof Lc3SimulatorRoute
   '/demo/i18n': typeof DemoI18nRoute
-  '/demo/table': typeof DemoTableRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/demo/i18n' | '/demo/table'
+  fullPaths: '/' | '/about' | '/lc3-simulator' | '/demo/i18n'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/demo/i18n' | '/demo/table'
-  id: '__root__' | '/' | '/about' | '/demo/i18n' | '/demo/table'
+  to: '/' | '/about' | '/lc3-simulator' | '/demo/i18n'
+  id: '__root__' | '/' | '/about' | '/lc3-simulator' | '/demo/i18n'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  Lc3SimulatorRoute: typeof Lc3SimulatorRoute
   DemoI18nRoute: typeof DemoI18nRoute
-  DemoTableRoute: typeof DemoTableRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,18 +85,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lc3-simulator': {
+      id: '/lc3-simulator'
+      path: '/lc3-simulator'
+      fullPath: '/lc3-simulator'
+      preLoaderRoute: typeof Lc3SimulatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/i18n': {
       id: '/demo/i18n'
       path: '/demo/i18n'
       fullPath: '/demo/i18n'
       preLoaderRoute: typeof DemoI18nRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/table': {
-      id: '/demo/table'
-      path: '/demo/table'
-      fullPath: '/demo/table'
-      preLoaderRoute: typeof DemoTableRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -105,8 +105,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  Lc3SimulatorRoute: Lc3SimulatorRoute,
   DemoI18nRoute: DemoI18nRoute,
-  DemoTableRoute: DemoTableRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

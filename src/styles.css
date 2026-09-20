@@ -527,3 +527,240 @@ a {
     @apply font-sans font-mono;
   }
 }
+
+/* LC-3 Workbench ---------------------------------------------------------- */
+
+body:has(.simulator-app) {
+  overflow: hidden;
+}
+
+body:has(.simulator-app) > header,
+body:has(.simulator-app) > footer {
+  display: none;
+}
+
+.simulator-app {
+  --background: #0d1117;
+  --foreground: #e6edf3;
+  --card: #121922;
+  --card-foreground: #e6edf3;
+  --popover: #171f29;
+  --popover-foreground: #f0f4f8;
+  --primary: #e6a84d;
+  --primary-foreground: #1a1206;
+  --secondary: #1b2531;
+  --secondary-foreground: #dbe5ef;
+  --muted: #18212b;
+  --muted-foreground: #8c9aaa;
+  --accent: #202b37;
+  --accent-foreground: #f0f4f8;
+  --border: #27323f;
+  --input: #344150;
+  --ring: #e6a84d;
+  --warning: #e6a84d;
+  --warning-foreground: #e6a84d;
+  --success: #6cc58e;
+  --success-foreground: #78d69b;
+  --sim-panel: #111820;
+  --sim-surface: #151e27;
+  --sim-border: #293541;
+  --sim-dim: #91a0af;
+  --sim-amber: #edb45f;
+  --sim-cyan: #66c9d2;
+  --sim-violet: #b7a0e8;
+  --sim-red: #df6b72;
+  --sim-console-green: #79d89d;
+  color: var(--foreground);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    var(--background);
+  background-size: 100% 4px;
+  font-family: var(--font-sans);
+}
+
+.simulator-app code {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.simulator-app button,
+.simulator-app a {
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease;
+}
+
+.sim-topbar,
+.sim-statusbar {
+  background: #0b1016;
+}
+
+.sim-panel,
+.sim-console,
+.sim-activitybar {
+  background: var(--sim-panel);
+}
+
+.sim-activitybar {
+  background: #0d131a;
+}
+
+.sim-dim {
+  color: var(--sim-dim);
+}
+
+.sim-label {
+  color: #b8c3cf;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.sim-logo-grid {
+  border-color: #473820;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 47%,
+      rgba(237, 180, 95, 0.12) 48%,
+      rgba(237, 180, 95, 0.12) 52%,
+      transparent 53%
+    ),
+    linear-gradient(
+      transparent 47%,
+      rgba(237, 180, 95, 0.12) 48%,
+      rgba(237, 180, 95, 0.12) 52%,
+      transparent 53%
+    ),
+    #161a1e;
+  background-size: 8px 8px;
+}
+
+.sim-icon-active {
+  color: var(--sim-amber);
+  background: color-mix(in srgb, var(--sim-amber) 10%, transparent);
+}
+
+.sim-icon-active::after {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  width: 2px;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--sim-amber);
+}
+
+.sim-file-active {
+  color: var(--foreground);
+  background: #1d2935;
+}
+
+.sim-input {
+  background: #0d141b;
+}
+
+.sim-assemble-button {
+  border-color: #4b3d28;
+  color: #f0c77e;
+  background: #171610;
+}
+
+.sim-run-button {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.sim-run-caret {
+  margin-left: -0.25rem;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-left-color: rgba(26, 18, 6, 0.25);
+}
+
+.sim-editor {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018), transparent 15%), #0e151d;
+}
+
+.sim-code-line {
+  min-height: 1.5rem;
+  color: #d6dee7;
+}
+
+.sim-code-line:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.sim-current-line {
+  box-shadow: inset 2px 0 var(--sim-amber);
+  background: color-mix(in srgb, var(--sim-amber) 7%, transparent);
+}
+
+.sim-line-number {
+  color: #647383;
+}
+
+.sim-comment {
+  color: #7d9a86;
+}
+
+.sim-directive {
+  color: var(--sim-violet);
+}
+
+.sim-table-head {
+  box-shadow: 0 1px var(--sim-border);
+}
+
+.sim-instruction-active td {
+  background: color-mix(in srgb, var(--sim-amber) 8%, var(--sim-panel));
+}
+
+.sim-address {
+  color: #d3a865;
+}
+
+.sim-register {
+  transition: background-color 120ms ease;
+}
+
+.sim-register:hover {
+  background: #18232e;
+}
+
+.sim-console {
+  position: relative;
+  background: #0c1415;
+}
+
+.sim-mobile-tabs {
+  background: #0d131a;
+}
+
+.sim-statusbar {
+  border-top: 1px solid #3d321f;
+  color: #c9d2dc;
+}
+
+@media (max-width: 767px) {
+  .simulator-app {
+    min-height: 500px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .simulator-app *,
+  .simulator-app *::before,
+  .simulator-app *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">TanStack starter mark</title>
+  <rect width="120" height="120" rx="24" fill="#111820"/>
+  <path d="M28 34h64L78 54H42L28 34Zm14 32h36l14 20H28l14-20Z" fill="#edb45f"/>
+</svg>
