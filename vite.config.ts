@@ -11,7 +11,10 @@ import { nitro } from 'nitro/vite'
 
 const config = defineConfig({
   staged: {
-    '*': 'vp check --fix',
+    '*': [
+      'node scripts/tailwind-intellisense-diagnostics.mjs --fix',
+      'vp check --fix',
+    ],
   },
   lint: {
     plugins: ['oxc', 'typescript', 'unicorn', 'import'],
