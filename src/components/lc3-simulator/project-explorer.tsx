@@ -7,25 +7,25 @@ import {
   FolderPlus,
   MoreHorizontal,
   Search,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from '@/components/ui/input-group'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tooltip, TooltipPopup, TooltipTrigger } from '@/components/ui/tooltip'
+} from "@/components/ui/input-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 
-import { files } from './data'
+import { files } from "./data";
 
 function ExplorerAction({
   label,
   children,
 }: {
-  label: string
-  children: React.ReactNode
+  label: string;
+  children: React.ReactNode;
 }) {
   return (
     <Tooltip>
@@ -36,7 +36,7 @@ function ExplorerAction({
       </TooltipTrigger>
       <TooltipPopup>{label}</TooltipPopup>
     </Tooltip>
-  )
+  );
 }
 
 export function ProjectExplorer() {
@@ -92,13 +92,13 @@ export function ProjectExplorer() {
             {files.map((file) => (
               <Button
                 className={`h-7 w-full justify-start px-2 font-normal ${
-                  file.active ? 'sim-file-active' : 'sim-dim'
+                  file.active ? "sim-file-active" : "sim-dim"
                 }`}
                 key={file.name}
                 size="xs"
                 variant="ghost"
               >
-                <FileCode2 className={file.active ? 'text-(--sim-cyan)' : ''} />
+                <FileCode2 className={file.active ? "text-(--sim-cyan)" : ""} />
                 <span className="truncate">{file.name}</span>
                 {file.dirty ? (
                   <span className="ml-auto text-(--sim-amber)">M</span>
@@ -137,5 +137,5 @@ export function ProjectExplorer() {
         <p>Stored locally in your browser</p>
       </div>
     </aside>
-  )
+  );
 }

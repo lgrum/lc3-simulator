@@ -1,10 +1,10 @@
-import { Cpu, FileCode2, SquareTerminal } from 'lucide-react'
+import { Cpu, FileCode2, SquareTerminal } from "lucide-react";
 
-import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 
-import { ConsolePanel } from './console-panel'
-import { EditorWorkspace } from './editor-workspace'
-import { MachineInspector } from './machine-inspector'
+import { ConsolePanel } from "./console-panel";
+import { EditorWorkspace } from "./editor-workspace";
+import { MachineInspector } from "./machine-inspector";
 
 export function MobileWorkbench() {
   return (
@@ -33,5 +33,5 @@ export function MobileWorkbench() {
         </TabsList>
       </div>
     </Tabs>
-  )
+  );
 }

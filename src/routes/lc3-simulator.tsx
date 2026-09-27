@@ -1,23 +1,23 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-import { SimulatorShell } from '@/components/lc3-simulator/simulator-shell'
+import { SimulatorShell } from "@/components/lc3-simulator/simulator-shell";
 
-export const Route = createFileRoute('/lc3-simulator')({
+export const Route = createFileRoute("/lc3-simulator")({
   component: Lc3SimulatorPage,
   head: () => ({
     meta: [
       {
-        title: 'LC-3 Workbench · Assembler & Simulator',
+        title: "LC-3 Workbench · Assembler & Simulator",
       },
       {
-        name: 'description',
+        name: "description",
         content:
-          'An educational workspace for writing, assembling, and simulating LC-3 programs.',
+          "An educational workspace for writing, assembling, and simulating LC-3 programs.",
       },
     ],
   }),
-})
+});
 
 function Lc3SimulatorPage() {
-  return <SimulatorShell />
+  return <SimulatorShell />;
 }

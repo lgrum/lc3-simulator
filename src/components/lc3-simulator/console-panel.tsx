@@ -1,29 +1,29 @@
-import { useState } from 'react'
+import { useState } from "react";
 import {
   ChevronDown,
   CircleX,
   PanelBottomClose,
   Send,
   Trash2,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from '@/components/ui/input-group'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
+} from "@/components/ui/input-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 
 export function ConsolePanel({ mobile = false }: { mobile?: boolean }) {
-  const [command, setCommand] = useState('')
+  const [command, setCommand] = useState("");
 
   return (
     <section
       className={`sim-console shrink-0 flex-col ${
-        mobile ? 'flex h-full border-0' : 'hidden h-48 border-t md:flex'
+        mobile ? "flex h-full border-0" : "hidden h-48 border-t md:flex"
       }`}
     >
       <Tabs className="min-h-0 flex-1 gap-0" defaultValue="console">
@@ -33,7 +33,7 @@ export function ConsolePanel({ mobile = false }: { mobile?: boolean }) {
               Console
             </TabsTab>
             <TabsTab className="h-full rounded-none px-3" value="problems">
-              Problems{' '}
+              Problems{" "}
               <Badge size="sm" variant="success">
                 0
               </Badge>
@@ -72,8 +72,8 @@ export function ConsolePanel({ mobile = false }: { mobile?: boolean }) {
             <form
               className="border-t px-2 py-1.5"
               onSubmit={(event) => {
-                event.preventDefault()
-                setCommand('')
+                event.preventDefault();
+                setCommand("");
               }}
             >
               <InputGroup className="sim-input font-mono">
@@ -126,5 +126,5 @@ export function ConsolePanel({ mobile = false }: { mobile?: boolean }) {
         <ChevronDown className="sr-only" />
       </Button>
     </section>
-  )
+  );
 }

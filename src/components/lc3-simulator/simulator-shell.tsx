@@ -12,32 +12,32 @@ import {
   RotateCcw,
   Settings,
   StepForward,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipPopup,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from "@/components/ui/tooltip";
 
-import { ConsolePanel } from './console-panel'
-import { EditorWorkspace } from './editor-workspace'
-import { MachineInspector } from './machine-inspector'
-import { MobileWorkbench } from './mobile-workbench'
-import { ProjectExplorer } from './project-explorer'
+import { ConsolePanel } from "./console-panel";
+import { EditorWorkspace } from "./editor-workspace";
+import { MachineInspector } from "./machine-inspector";
+import { MobileWorkbench } from "./mobile-workbench";
+import { ProjectExplorer } from "./project-explorer";
 
 function IconAction({
   label,
   children,
   active = false,
 }: {
-  label: string
-  children: React.ReactNode
-  active?: boolean
+  label: string;
+  children: React.ReactNode;
+  active?: boolean;
 }) {
   return (
     <Tooltip>
@@ -46,7 +46,7 @@ function IconAction({
           <Button
             aria-label={label}
             aria-pressed={active}
-            className={active ? 'sim-icon-active' : ''}
+            className={active ? "sim-icon-active" : ""}
             size="icon"
             variant="ghost"
           />
@@ -56,7 +56,7 @@ function IconAction({
       </TooltipTrigger>
       <TooltipPopup side="right">{label}</TooltipPopup>
     </Tooltip>
-  )
+  );
 }
 
 export function SimulatorShell() {
@@ -92,7 +92,7 @@ export function SimulatorShell() {
               <span className="size-1.5 rounded-full bg-(--sim-amber)" /> x3002
             </Badge>
             <Button className="sim-assemble-button" size="sm" variant="outline">
-              <CircuitBoard />{' '}
+              <CircuitBoard />{" "}
               <span className="hidden sm:inline">Assemble</span>
             </Button>
             <Button className="sim-run-button" size="sm">
@@ -159,7 +159,7 @@ export function SimulatorShell() {
 
         <footer className="sim-statusbar flex h-6 shrink-0 items-center gap-3 px-2 font-mono text-[10px]">
           <span className="flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-(--sim-console-green)" />{' '}
+            <span className="size-1.5 rounded-full bg-(--sim-console-green)" />{" "}
             Ready
           </span>
           <span className="hidden sm:inline">0 errors</span>
@@ -168,5 +168,5 @@ export function SimulatorShell() {
         </footer>
       </main>
     </TooltipProvider>
-  )
+  );
 }

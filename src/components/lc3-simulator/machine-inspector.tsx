@@ -5,15 +5,15 @@ import {
   Gauge,
   MemoryStick,
   PencilLine,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 
-import { instructions, registers } from './data'
+import { instructions, registers } from "./data";
 
 function RegisterGrid() {
   return (
@@ -31,7 +31,7 @@ function RegisterGrid() {
             <PencilLine className="size-3 opacity-0 transition-opacity group-hover:opacity-50" />
           </span>
           <span
-            className={`font-mono text-sm font-semibold ${register.changed ? 'text-(--sim-amber)' : ''}`}
+            className={`font-mono text-sm font-semibold ${register.changed ? "text-(--sim-amber)" : ""}`}
           >
             {register.hex}
           </span>
@@ -41,14 +41,14 @@ function RegisterGrid() {
         </Button>
       ))}
     </div>
-  )
+  );
 }
 
 export function MachineInspector({ mobile = false }: { mobile?: boolean }) {
   return (
     <aside
       className={`sim-panel min-h-0 shrink-0 flex-col ${
-        mobile ? 'flex h-full w-full border-0' : 'hidden w-72 border-l xl:flex'
+        mobile ? "flex h-full w-full border-0" : "hidden w-72 border-l xl:flex"
       }`}
     >
       <Tabs className="min-h-0 flex-1 gap-0" defaultValue="cpu">
@@ -147,7 +147,7 @@ export function MachineInspector({ mobile = false }: { mobile?: boolean }) {
                   <span className="sim-address">
                     x{(0x3000 + index).toString(16).toUpperCase()}
                   </span>
-                  <span>{instructions[index]?.hex ?? '0000'}</span>
+                  <span>{instructions[index]?.hex ?? "0000"}</span>
                 </div>
               ))}
             </div>
@@ -155,5 +155,5 @@ export function MachineInspector({ mobile = false }: { mobile?: boolean }) {
         </TabsPanel>
       </Tabs>
     </aside>
-  )
+  );
 }
