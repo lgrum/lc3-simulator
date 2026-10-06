@@ -150,8 +150,6 @@ function SpeedControl() {
         <ChevronDownIcon aria-hidden />
       </MenuTrigger>
       <MenuPopup align="end">
-        <MenuGroupLabel>{m.speed_label()}</MenuGroupLabel>
-        <MenuSeparator />
         <MenuRadioGroup
           value={speed}
           onValueChange={(value: Speed) => {
@@ -159,8 +157,11 @@ function SpeedControl() {
             machine.setSpeed(value === "max" ? "max" : Number(value));
           }}
         >
+          {/* Base UI requires group labels inside their group. */}
+          <MenuGroupLabel>{m.speed_label()}</MenuGroupLabel>
+          <MenuSeparator />
           {SPEEDS.map((value) => (
-            <MenuRadioItem key={value} value={value}>
+            <MenuRadioItem key={value} value={value} closeOnClick>
               {speedLabel(value)}
             </MenuRadioItem>
           ))}
