@@ -56,6 +56,8 @@ const LED: Record<RunTone, string> = {
 };
 
 export function RunState() {
+  // Reads the trace from the machine during render; see RegistersPanel.
+  "use no memo";
   const { machine } = useWorkbench();
   const snapshot = useSnapshot();
   const exception =

@@ -75,5 +75,20 @@
   "clock_running": "clock running",
   "clock_stopped": "clock stopped",
   "saved_usp": "user R6, saved during the TRAP",
-  "saved_ssp": "saved supervisor stack"
+  "saved_ssp": "saved supervisor stack",
+  "memory": "Memory",
+  "memory_go_to_label": "Go to an address or label",
+  "memory_go_to_placeholder": "Go to address or label",
+  "memory_go_to_not_found": "No such address or label",
+  "memory_follow_pc": "Follow PC",
+  "memory_pc_here": "(PC)",
+  "breakpoint_add": "Add a breakpoint at {addr}",
+  "breakpoint_remove": "Remove the breakpoint at {addr}",
+  "column_breakpoint": "Breakpoint",
+  "column_address": "Addr",
+  "column_label": "Label",
+  "column_opcode": "Op",
+  "column_decimal": "Dec",
+  "column_instruction": "Instruction",
+  "column_ascii": "Chr"
 }

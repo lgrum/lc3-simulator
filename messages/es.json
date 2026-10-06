@@ -75,5 +75,20 @@
   "clock_running": "reloj en marcha",
   "clock_stopped": "reloj detenido",
   "saved_usp": "R6 del usuario, guardado durante el TRAP",
-  "saved_ssp": "pila del supervisor guardada"
+  "saved_ssp": "pila del supervisor guardada",
+  "memory": "Memoria",
+  "memory_go_to_label": "Ir a una dirección o etiqueta",
+  "memory_go_to_placeholder": "Ir a dirección o etiqueta",
+  "memory_go_to_not_found": "No existe esa dirección o etiqueta",
+  "memory_follow_pc": "Seguir el PC",
+  "memory_pc_here": "(PC)",
+  "breakpoint_add": "Añadir un punto de interrupción en {addr}",
+  "breakpoint_remove": "Quitar el punto de interrupción de {addr}",
+  "column_breakpoint": "Punto de interrupción",
+  "column_address": "Dir.",
+  "column_label": "Etiqueta",
+  "column_opcode": "Op",
+  "column_decimal": "Dec",
+  "column_instruction": "Instrucción",
+  "column_ascii": "Car."
 }

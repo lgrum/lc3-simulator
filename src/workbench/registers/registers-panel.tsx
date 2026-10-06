@@ -98,6 +98,9 @@ function Flags({ n, z, p }: { n: boolean; z: boolean; p: boolean }) {
 }
 
 export function RegistersPanel() {
+  // Reads symbols from the machine during render, which React Compiler
+  // can't see change; the snapshot re-renders this panel instead.
+  "use no memo";
   const { machine } = useWorkbench();
   const snapshot = useSnapshot();
   const supervisor = snapshot.privilege === "supervisor";

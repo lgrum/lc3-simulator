@@ -21,6 +21,9 @@ import type { SourceKind } from "./machine-markers";
 
 /** The file the PC is in while paused; undefined while running. */
 function usePcSource(): SourceKind | undefined {
+  // Reads source mappings from the machine, which change on load without
+  // React knowing; the snapshot re-renders callers instead.
+  "use no memo";
   const { machine } = useWorkbench();
   const snapshot = useSnapshot();
   if (snapshot.status === "running") return undefined;
