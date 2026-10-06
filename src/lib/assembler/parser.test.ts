@@ -16,6 +16,7 @@ describe("assembler parser", () => {
     ).toEqual({
       statements: [
         {
+          line: 1,
           label: null,
           kind: {
             type: "directive",
@@ -26,6 +27,7 @@ describe("assembler parser", () => {
           },
         },
         {
+          line: 2,
           label: "VALUE",
           kind: {
             type: "directive",
@@ -36,6 +38,7 @@ describe("assembler parser", () => {
           },
         },
         {
+          line: 3,
           label: "COUNT",
           kind: {
             type: "directive",
@@ -46,6 +49,7 @@ describe("assembler parser", () => {
           },
         },
         {
+          line: 4,
           label: "TEXT",
           kind: {
             type: "directive",
@@ -53,6 +57,7 @@ describe("assembler parser", () => {
           },
         },
         {
+          line: 5,
           label: null,
           kind: { type: "directive", directive: { type: "end" } },
         },

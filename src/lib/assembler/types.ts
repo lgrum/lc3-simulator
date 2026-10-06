@@ -63,11 +63,18 @@ export type StatementKind =
   | { type: "instruction"; instruction: Instruction }
   | { type: "directive"; directive: Directive };
 
-export type Statement = { label: string | null; kind: StatementKind };
+export type Statement = {
+  line: number;
+  label: string | null;
+  kind: StatementKind;
+};
 
 export type Program = { statements: Array<Statement> };
 
-export type AssemblyResult = [
-  words: Array<number>,
-  symbols: Map<string, number>,
-];
+export type LoadedProgram = {
+  origin: number;
+  words: Array<number>;
+  symbols: Map<string, number>;
+  sourceMap: Map<number, number>;
+};
+export type AssemblyResult = LoadedProgram;

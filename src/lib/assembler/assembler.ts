@@ -31,6 +31,7 @@ class Assembler {
   private readonly symbols = new Map<string, number>();
   private readonly words: Array<number> = [];
   private pc = 0;
+  private readonly sourceMap = new Map<number, number>();
 
   constructor(private readonly statements: Array<Statement>) {}
 
@@ -38,7 +39,12 @@ class Assembler {
     this.init();
     this.labelParse();
     this.encode();
-    return [this.words, this.symbols];
+    return {
+      origin: this.address,
+      words: this.words,
+      symbols: this.symbols,
+      sourceMap: this.sourceMap,
+    };
   }
 
   private error(text: string): AssemblerError {
@@ -62,6 +68,15 @@ class Assembler {
     if (statement.kind.directive.operand.type !== "immediate") {
       throw this.error(".ORIG must have a number literal operand");
     }
+    if (
+      this.statements
+        .slice(1)
+        .some(
+          (s) =>
+            s.kind.type === "directive" && s.kind.directive.type === "orig",
+        )
+    )
+      throw this.error("Multiple .ORIG blocks are not supported");
     this.address = toWord(statement.kind.directive.operand.value);
   }
 
@@ -69,6 +84,8 @@ class Assembler {
     let pc = this.address;
     for (const statement of this.statements) {
       if (statement.label !== null) {
+        if (this.symbols.has(statement.label))
+          throw this.error(`Duplicate label ${statement.label}`);
         this.symbols.set(statement.label, pc);
       }
       pc = toWord(pc + statementSize(statement));
@@ -78,7 +95,12 @@ class Assembler {
   private encode(): void {
     this.pc = this.address;
     for (const statement of this.statements) {
-      this.pc = toWord(this.pc + statementSize(statement));
+      const size = statementSize(statement);
+      if (this.words.length + size > 0x10000)
+        throw this.error("Program exceeds 65,536 words");
+      for (let i = 0; i < size; i++)
+        this.sourceMap.set(toWord(this.pc + i), statement.line);
+      this.pc = toWord(this.pc + size);
       if (statement.kind.type === "directive") {
         this.encodeDirective(statement.kind.directive);
       } else {
@@ -93,7 +115,6 @@ class Assembler {
         if (directive.operand.type !== "immediate") {
           throw this.error(".ORIG must have a number literal operand");
         }
-        this.words.push(toWord(directive.operand.value));
         return;
       case "blkw": {
         const count = blockSize(directive);

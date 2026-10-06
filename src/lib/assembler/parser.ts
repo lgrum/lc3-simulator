@@ -41,8 +41,10 @@ class Parser {
   parse(): Program {
     const statements: Array<Statement> = [];
 
+    this.skipNewlines();
     while (!this.isAtEnd()) {
       statements.push(this.parseStatement());
+      this.skipNewlines();
     }
 
     return { statements };
@@ -100,6 +102,7 @@ class Parser {
     const label = this.parseOptionalLabel();
     this.skipNewlines();
 
+    const line = this.peek().line;
     const kind: StatementKind = this.checkToken("directive")
       ? { type: "directive", directive: this.parseDirective() }
       : { type: "instruction", instruction: this.parseInstruction() };
@@ -111,7 +114,7 @@ class Parser {
     }
     this.advance();
 
-    return { label, kind };
+    return { line, label, kind };
   }
 
   private parseDirective(): Directive {
