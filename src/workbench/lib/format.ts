@@ -1,3 +1,5 @@
+import type { IsaDefinition } from "@/lib/simulator/isa/types";
+
 /** `x3000`, the LC-3 notation for a 16-bit word. */
 export function hex(value: number): string {
   return "x" + (value & 0xffff).toString(16).toUpperCase().padStart(4, "0");
@@ -48,4 +50,14 @@ export function parseWord(text: string): number | undefined {
   if (!Number.isInteger(value) || value < -0x8000 || value > 0xffff)
     return undefined;
   return value & 0xffff;
+}
+
+/** The mnemonic of an instruction word, e.g. for the IR. */
+export function mnemonicOf(
+  isa: Pick<IsaDefinition, "instructions">,
+  word: number,
+): string | undefined {
+  return isa.instructions.find(
+    (spec) => spec.opcode === word >>> 12 && (spec.match?.(word) ?? true),
+  )?.mnemonic;
 }

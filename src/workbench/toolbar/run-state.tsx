@@ -67,7 +67,7 @@ export function RunState() {
     <output
       aria-live="polite"
       className={cn(
-        "ml-auto flex h-8 min-w-0 items-center gap-2.5 rounded-[5px] bg-screen px-3 font-mono text-xs font-medium shadow-[inset_0_1px_3px_rgba(0,0,0,0.7)]",
+        "ml-auto flex h-8 flex-none items-center gap-2.5 rounded-[5px] bg-screen px-3 font-mono text-xs font-medium shadow-[inset_0_1px_3px_rgba(0,0,0,0.7)]",
         tone === "fault" ? "text-[#ff9a80]" : "text-phosphor",
       )}
     >

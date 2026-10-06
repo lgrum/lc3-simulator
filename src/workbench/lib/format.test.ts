@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { asciiOf, hex, opcodeBits, parseWord, signed } from "./format";
+import { LC3 } from "@/lib/simulator/isa/lc3";
+
+import {
+  asciiOf,
+  hex,
+  mnemonicOf,
+  opcodeBits,
+  parseWord,
+  signed,
+} from "./format";
 
 describe("format", () => {
   it("formats words as LC-3 hex, signed values and opcode bits", () => {
@@ -34,5 +43,13 @@ describe("format", () => {
     expect(parseWord("65536")).toBeUndefined();
     expect(parseWord("R1")).toBeUndefined();
     expect(parseWord("")).toBeUndefined();
+  });
+
+  it("names instructions, including variants that share an opcode", () => {
+    expect(mnemonicOf(LC3, 0x1042)).toBe("ADD");
+    expect(mnemonicOf(LC3, 0xc1c0)).toBe("RET");
+    expect(mnemonicOf(LC3, 0xc080)).toBe("JMP");
+    expect(mnemonicOf(LC3, 0x8000)).toBe("RTI");
+    expect(mnemonicOf(LC3, 0xd000)).toBeUndefined();
   });
 });

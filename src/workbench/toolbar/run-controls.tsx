@@ -2,6 +2,7 @@ import {
   ArrowDownToLineIcon,
   ArrowUpFromLineIcon,
   ChevronDownIcon,
+  GaugeIcon,
   PauseIcon,
   PlayIcon,
   Redo2Icon,
@@ -141,8 +142,8 @@ function SpeedControl() {
   const [speed, setSpeed] = useState<Speed>("max");
   return (
     <Menu>
-      <MenuTrigger render={<Key tone="flat" />}>
-        <span className="text-silk-2">{m.speed()}</span>
+      <MenuTrigger render={<Key tone="flat" aria-label={m.speed()} />}>
+        <GaugeIcon aria-hidden className="text-silk-2" />
         <span className="font-mono text-[11.5px] text-phosphor">
           {speed === "max" ? m.speed_max() : Number(speed).toLocaleString()}
         </span>
@@ -195,7 +196,6 @@ export function RunControls() {
       >
         <PlayIcon aria-hidden />
         {halted ? m.restart() : m.continue_run()}
-        <Shortcut>F5</Shortcut>
       </HintedKey>
       <Control
         icon={<PauseIcon aria-hidden />}
