@@ -1,9 +1,11 @@
 allowBuilds:
   esbuild: true
   lightningcss: true
+  workerd: true
 onlyBuiltDependencies:
   - esbuild
   - lightningcss
+  - workerd
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@0.3.3
   vite-plus: 0.3.3

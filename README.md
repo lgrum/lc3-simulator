@@ -41,3 +41,17 @@ otherwise a reload on a deep link returns 404:
 | Any static server (e.g. `serve`) | `serve -s dist/client`                                                                     |
 
 `vp preview` does not apply this fallback.
+
+## Cloudflare deployment
+
+The app deploys to Cloudflare Workers as static assets at
+<https://lc3.lgrum.xyz>. `wrangler.jsonc` configures the SPA fallback and custom
+domain; Cloudflare provisions the DNS record and HTTPS certificate.
+
+```bash
+pnpm exec wrangler login   # once, or when the login expires
+vp run deploy             # build and deploy dist/client/
+```
+
+Deployment uses the Cloudflare account that owns `lgrum.xyz`. If the login has
+access to multiple accounts, set `CLOUDFLARE_ACCOUNT_ID` to select that account.
