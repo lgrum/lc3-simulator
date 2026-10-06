@@ -59,12 +59,12 @@ function RegisterRow({ name, value, numbers, note }: RowProps) {
           <td className="pr-3 text-right font-mono text-xs text-silk-3 tabular-nums">
             {value !== signed(value) ? value : ""}
           </td>
-          <td className="font-mono text-xs whitespace-nowrap text-silk-2">
+          <td className="w-full max-w-0 truncate font-mono text-xs text-silk-2">
             {note}
           </td>
         </>
       ) : (
-        <td colSpan={3} className="text-xs whitespace-nowrap text-silk-2">
+        <td colSpan={3} className="w-full max-w-0 truncate text-xs text-silk-2">
           {note}
         </td>
       )}
@@ -80,7 +80,7 @@ function Flags({ n, z, p }: { n: boolean; z: boolean; p: boolean }) {
   ];
   const set = flags.filter(([, on]) => on).map(([flag]) => flag.toUpperCase());
   return (
-    <span className="ml-1 inline-flex gap-1 font-mono">
+    <span className="mr-0.5 inline-flex gap-1 font-mono">
       {flags.map(([flag, on]) => (
         <span
           key={flag}
@@ -158,9 +158,9 @@ export function RegistersPanel() {
               value={snapshot.psr}
               note={
                 <>
+                  <Flags n={snapshot.n} z={snapshot.z} p={snapshot.p} /> ·{" "}
                   {supervisor ? m.mode_supervisor() : m.mode_user()} ·{" "}
-                  {m.priority({ level: snapshot.priority })} ·
-                  <Flags n={snapshot.n} z={snapshot.z} p={snapshot.p} />
+                  {m.priority({ level: snapshot.priority })}
                 </>
               }
             />

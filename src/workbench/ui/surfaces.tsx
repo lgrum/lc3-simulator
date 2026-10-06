@@ -20,7 +20,7 @@ export function Panel({ className, ...props }: ComponentProps<"section">) {
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col rounded-[7px] border border-edge bg-case-2",
+        "flex min-h-0 min-w-0 flex-col rounded-[7px] border border-edge bg-case-2",
         className,
       )}
       {...props}

@@ -90,5 +90,11 @@
   "column_opcode": "Op",
   "column_decimal": "Dec",
   "column_instruction": "Instrucción",
-  "column_ascii": "Car."
+  "column_ascii": "Car.",
+  "console": "Consola",
+  "console_clear": "Borrar",
+  "console_input_label": "Entrada de teclado para el programa",
+  "console_output_label": "Salida del programa",
+  "console_hint": "Haz clic aquí y escribe para enviar teclas al programa. Él decide si las muestra.",
+  "console_waiting": "El programa espera una tecla. Escribe para continuar."
 }

@@ -90,5 +90,11 @@
   "column_opcode": "Op",
   "column_decimal": "Dec",
   "column_instruction": "Instruction",
-  "column_ascii": "Chr"
+  "column_ascii": "Chr",
+  "console": "Console",
+  "console_clear": "Clear",
+  "console_input_label": "Keyboard input for the program",
+  "console_output_label": "Program output",
+  "console_hint": "Click here and type to send keys to the program. It decides whether to echo them.",
+  "console_waiting": "The program is waiting for a key. Type to continue."
 }

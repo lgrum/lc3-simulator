@@ -1,5 +1,6 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import { BottomPanel } from "./bottom-panel";
 import { EditorPanel } from "./editor/editor-panel";
 import { MemoryPanel } from "./memory/memory-panel";
 import { RegistersPanel } from "./registers/registers-panel";
@@ -15,8 +16,9 @@ export function Workbench() {
           <main className="grid min-h-0 grid-cols-[minmax(0,1fr)_540px] gap-2.5 p-2.5">
             <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] gap-2.5">
               <EditorPanel />
+              <BottomPanel />
             </div>
-            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2.5">
+            <div className="grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-2.5">
               <RegistersPanel />
               <MemoryPanel />
             </div>
