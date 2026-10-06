@@ -20,6 +20,12 @@ export type Breakpoint = {
   hitCount?: number;
   hits: number;
 };
+export type WatchKind = "read" | "write" | "rw";
+export type Watchpoint = {
+  id: WatchId;
+  addr: number;
+  kind: WatchKind;
+};
 export type DebuggerCheckpoint = {
   depth: number;
   hits: Array<[BreakpointId, number]>;
@@ -140,10 +146,7 @@ export class Debugger {
     BreakpointId,
     Breakpoint & { test?: Condition }
   >();
-  private readonly watches = new Map<
-    WatchId,
-    { addr: number; kind: "read" | "write" | "rw" }
-  >();
+  private readonly watches = new Map<WatchId, Watchpoint>();
   private skipAddress: number | undefined;
   private poll: PollRecord | undefined;
   private mode: Mode | undefined;
@@ -191,14 +194,16 @@ export class Debugger {
       })),
   };
   readonly watchpoints = {
-    add: (addr: number, kind: "read" | "write" | "rw"): WatchId => {
+    add: (addr: number, kind: WatchKind): WatchId => {
       const id = "w" + this.nextId++;
-      this.watches.set(id, { addr: addr & 0xffff, kind });
+      this.watches.set(id, { id, addr: addr & 0xffff, kind });
       return id;
     },
     remove: (id: WatchId): void => {
       this.watches.delete(id);
     },
+    list: (): ReadonlyArray<Watchpoint> =>
+      [...this.watches.values()].map((watch) => ({ ...watch })),
   };
   checkpoint(): DebuggerCheckpoint {
     return {

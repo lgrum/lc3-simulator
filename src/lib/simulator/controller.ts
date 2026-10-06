@@ -7,6 +7,8 @@ import type {
   BreakpointId,
   PauseReason,
   WatchId,
+  WatchKind,
+  Watchpoint,
 } from "./debugger";
 import { installDisplay } from "./devices/display";
 import { Keyboard } from "./devices/keyboard";
@@ -17,7 +19,16 @@ import type { IsaDefinition } from "./isa/types";
 import { assembleOs } from "./os/load";
 import { createMachineState, restoreControl, captureControl } from "./state";
 
-export type { LoadedProgram, StepEvent, Breakpoint, BreakpointId, WatchId };
+export type {
+  LoadedProgram,
+  StepEvent,
+  Breakpoint,
+  BreakpointId,
+  PauseReason,
+  WatchId,
+  WatchKind,
+  Watchpoint,
+};
 export type Unsubscribe = () => void;
 export type RegisterName =
   | "R0"
@@ -58,6 +69,8 @@ export type MachineSnapshot = {
   output: string;
   status: "paused" | "running" | "halted";
   pauseReason: PauseReason | null;
+  /** Whether stepBack() has history to undo. */
+  canStepBack: boolean;
   version: number;
 };
 export type Scheduler = {
@@ -403,7 +416,7 @@ class Controller {
     list: (): ReadonlyArray<Breakpoint> => this.debugger.breakpoints.list(),
   };
   readonly watchpoints = {
-    add: (addr: number, kind: "read" | "write" | "rw"): WatchId => {
+    add: (addr: number, kind: WatchKind): WatchId => {
       const id = this.debugger.watchpoints.add(addr, kind);
       this.changed();
       this.notify();
@@ -414,6 +427,7 @@ class Controller {
       this.changed();
       this.notify();
     },
+    list: (): ReadonlyArray<Watchpoint> => this.debugger.watchpoints.list(),
   };
   getSnapshot(): MachineSnapshot {
     this.snapshot ??= Object.freeze({
@@ -432,6 +446,7 @@ class Controller {
       output: this.state.display.output,
       status: this.status,
       pauseReason: this.pauseReason,
+      canStepBack: this.history.length > 0,
       version: this.version,
     });
     return this.snapshot;

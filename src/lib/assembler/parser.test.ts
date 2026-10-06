@@ -201,6 +201,20 @@ describe("assembler parser", () => {
     });
   });
 
+  it("reports the offending token's position", () => {
+    expect(() => parseSource(".ORIG x3000\n  FOO R1\n")).toThrow(
+      expect.objectContaining({
+        message: "Unknown opcode 'R1' at 2:6",
+        position: { line: 2, column: 7, endColumn: 9 },
+      }),
+    );
+    expect(() => parseSource("ADD R0, R1, R8\n")).toThrow(
+      expect.objectContaining({
+        position: { line: 1, column: 13, endColumn: 15 },
+      }),
+    );
+  });
+
   it("reports missing newlines and invalid operands", () => {
     expect(() => parseSource("RET")).toThrow(ParserError);
     expect(() => parseSource("ADD R0, R1, R8\n")).toThrow(

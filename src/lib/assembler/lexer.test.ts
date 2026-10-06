@@ -42,6 +42,19 @@ describe("assembler lexer", () => {
         line: 1,
         column: 13,
         message: "Invalid hexadecimal literal at 1:12",
+        position: { line: 1, column: 9, endColumn: 13 },
+      });
+    }
+  });
+
+  it("reports the offending text's position on its own line", () => {
+    try {
+      tokenize('.ORIG x3000\nLEA R0, "open\n');
+      throw new Error("Expected a LexerError");
+    } catch (error) {
+      expect(error).toMatchObject({
+        text: "Unterminated string",
+        position: { line: 2, column: 9, endColumn: 14 },
       });
     }
   });

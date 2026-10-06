@@ -311,6 +311,33 @@ describe("review regressions", () => {
     expect(notifications).toBe(2);
     expect(machine.getSnapshot().version).toBeGreaterThan(added.version);
   });
+  it("lists watchpoints with their address and kind", () => {
+    const { machine } = fixture("HALT");
+    const read = machine.watchpoints.add(0x14000, "read");
+    const rw = machine.watchpoints.add(0x4001, "rw");
+    expect(machine.watchpoints.list()).toEqual([
+      { id: read, addr: 0x4000, kind: "read" },
+      { id: rw, addr: 0x4001, kind: "rw" },
+    ]);
+    machine.watchpoints.remove(read);
+    expect(machine.watchpoints.list()).toEqual([
+      { id: rw, addr: 0x4001, kind: "rw" },
+    ]);
+  });
+  it("reports whether there is history to step back through", () => {
+    const { machine } = fixture("ADD R0, R0, #1\nADD R0, R0, #1\nHALT");
+    expect(machine.getSnapshot().canStepBack).toBe(false);
+    machine.stepInto();
+    expect(machine.getSnapshot().canStepBack).toBe(true);
+    machine.stepBack();
+    expect(machine.getSnapshot().canStepBack).toBe(false);
+    machine.stepInto();
+    machine.writeRegister("R1", 5);
+    expect(machine.getSnapshot().canStepBack).toBe(false);
+    machine.stepInto();
+    machine.reset();
+    expect(machine.getSnapshot().canStepBack).toBe(false);
+  });
   it("uses unsigned word values in breakpoint conditions", () => {
     const { machine, flush } = fixture("LOOP BR LOOP");
     machine.writeRegister("R0", 0xffff);

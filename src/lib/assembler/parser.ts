@@ -6,6 +6,7 @@ import type {
   Offset,
   Program,
   RegisterOrImmediate,
+  SourcePosition,
   Statement,
   StatementKind,
   Token,
@@ -24,12 +25,19 @@ const TRAP_VECTORS = new Map([
 export class ParserError extends Error {
   readonly token: Token;
   readonly text: string;
+  /** The offending token. */
+  readonly position: SourcePosition;
 
   constructor(text: string, token: Token) {
     super(`${text} at ${token.line}:${token.column - 1}`);
     this.name = "ParserError";
     this.token = token;
     this.text = text;
+    this.position = {
+      line: token.line,
+      column: token.column,
+      endColumn: token.column + Math.max(1, token.lexeme.length),
+    };
   }
 }
 
@@ -148,7 +156,7 @@ class Parser {
       case "identifier":
         return { type: "label", label: token.lexeme };
       default:
-        throw this.error("Expected operand");
+        throw this.error("Expected operand", token);
     }
   }
 
@@ -157,7 +165,7 @@ class Parser {
       const token = this.advance();
       const vector = TRAP_VECTORS.get(token.lexeme.toUpperCase());
       if (vector === undefined) {
-        throw this.error(`Expected routine, found '${token.lexeme}'`);
+        throw this.error(`Expected routine, found '${token.lexeme}'`, token);
       }
       return { type: "trap", trapvect_8: { type: "immediate", value: vector } };
     }
@@ -254,7 +262,7 @@ class Parser {
       case "number_literal":
         return { type: "immediate", value: this.parseNumber(token) };
       default:
-        throw this.error(`Expected '${operand}'`);
+        throw this.error(`Expected '${operand}'`, token);
     }
   }
 
@@ -281,7 +289,7 @@ class Parser {
     } else if (token.type === "number_literal") {
       return { type: "immediate", value: this.parseNumber(token) };
     }
-    throw this.error("Expected register or immediate");
+    throw this.error("Expected register or immediate", token);
   }
 
   private parseNumber(token: Token): number {

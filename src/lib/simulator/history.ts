@@ -19,6 +19,9 @@ export class History {
     this.head = (this.head + 1) % this.capacity;
     this.size = Math.min(this.capacity, this.size + 1);
   }
+  get length(): number {
+    return this.size;
+  }
   clear(): void {
     this.entries.fill(undefined);
     this.head = 0;

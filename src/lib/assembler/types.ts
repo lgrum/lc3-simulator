@@ -11,6 +11,18 @@ export type TokenType =
   | "newline"
   | "eof";
 
+/**
+ * Where an assembly error applies, for editor markers. Lines and columns are
+ * 1-based and endColumn is exclusive. Without columns, the error applies to
+ * the whole line. Columns count UTF-8 bytes, which equals characters for
+ * ASCII source.
+ */
+export type SourcePosition = {
+  line: number;
+  column?: number;
+  endColumn?: number;
+};
+
 export type Token = {
   type: TokenType;
   lexeme: string;

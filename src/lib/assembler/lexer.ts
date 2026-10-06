@@ -1,4 +1,4 @@
-import type { Token, TokenType } from "./types";
+import type { SourcePosition, Token, TokenType } from "./types";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder("utf-8", { ignoreBOM: true });
@@ -10,15 +10,24 @@ function asciiByte(character: string): number {
 
 export class LexerError extends Error {
   readonly text: string;
+  /** The scanner position, one column past the offending text. */
   readonly line: number;
   readonly column: number;
+  /** The offending text, from the start of its token to the scanner. */
+  readonly position: SourcePosition;
 
-  constructor(text: string, line: number, column: number) {
+  constructor(
+    text: string,
+    line: number,
+    column: number,
+    position: SourcePosition = { line, column: column - 1, endColumn: column },
+  ) {
     super(`${text} at ${line}:${column - 1}`);
     this.name = "LexerError";
     this.text = text;
     this.line = line;
     this.column = column;
+    this.position = position;
   }
 }
 
@@ -63,7 +72,11 @@ export class Lexer {
   }
 
   private error(text: string): LexerError {
-    return new LexerError(text, this.line, this.column);
+    return new LexerError(text, this.line, this.column, {
+      line: this.tokenLine,
+      column: this.tokenColumn,
+      endColumn: Math.max(this.column, this.tokenColumn + 1),
+    });
   }
 
   private makeToken(tokenType: TokenType): Token {

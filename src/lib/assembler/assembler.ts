@@ -5,6 +5,7 @@ import type {
   Instruction,
   Offset,
   Program,
+  SourcePosition,
   Statement,
 } from "./types";
 
@@ -18,11 +19,14 @@ const PC_MEMORY_OPCODES = {
 
 export class AssemblerError extends Error {
   readonly text: string;
+  /** The statement's line, or null for errors about the whole program. */
+  readonly position: SourcePosition | null;
 
-  constructor(text: string) {
+  constructor(text: string, line?: number) {
     super(text);
     this.name = "AssemblerError";
     this.text = text;
+    this.position = line === undefined ? null : { line };
   }
 }
 
@@ -32,6 +36,8 @@ class Assembler {
   private readonly words: Array<number> = [];
   private pc = 0;
   private readonly sourceMap = new Map<number, number>();
+  /** The line of the statement being processed, for error positions. */
+  private line: number | undefined;
 
   constructor(private readonly statements: Array<Statement>) {}
 
@@ -48,7 +54,7 @@ class Assembler {
   }
 
   private error(text: string): AssemblerError {
-    return new AssemblerError(text);
+    return new AssemblerError(text, this.line);
   }
 
   private init(): void {
@@ -56,6 +62,7 @@ class Assembler {
     if (!statement) {
       throw this.error("Expected statements, found none");
     }
+    this.line = statement.line;
     if (statement.label !== null) {
       throw this.error(".ORIG cannot have a label");
     }
@@ -68,21 +75,22 @@ class Assembler {
     if (statement.kind.directive.operand.type !== "immediate") {
       throw this.error(".ORIG must have a number literal operand");
     }
-    if (
-      this.statements
-        .slice(1)
-        .some(
-          (s) =>
-            s.kind.type === "directive" && s.kind.directive.type === "orig",
-        )
-    )
+    const secondOrig = this.statements
+      .slice(1)
+      .find(
+        (s) => s.kind.type === "directive" && s.kind.directive.type === "orig",
+      );
+    if (secondOrig) {
+      this.line = secondOrig.line;
       throw this.error("Multiple .ORIG blocks are not supported");
+    }
     this.address = toWord(statement.kind.directive.operand.value);
   }
 
   private labelParse(): void {
     let pc = this.address;
     for (const statement of this.statements) {
+      this.line = statement.line;
       if (statement.label !== null) {
         if (this.symbols.has(statement.label))
           throw this.error(`Duplicate label ${statement.label}`);
@@ -95,6 +103,7 @@ class Assembler {
   private encode(): void {
     this.pc = this.address;
     for (const statement of this.statements) {
+      this.line = statement.line;
       const size = statementSize(statement);
       if (this.words.length + size > 0x10000)
         throw this.error("Program exceeds 65,536 words");
@@ -117,7 +126,7 @@ class Assembler {
         }
         return;
       case "blkw": {
-        const count = blockSize(directive);
+        const count = blockSize(directive, this.line);
         for (let i = 0; i < count; i += 1) {
           this.words.push(0);
         }
@@ -302,12 +311,15 @@ function signedWord(value: number): number {
   return word >= 0x8000 ? word - 0x10000 : word;
 }
 
-function blockSize(directive: { operand: DirectiveOperand }): number {
+function blockSize(
+  directive: { operand: DirectiveOperand },
+  line?: number,
+): number {
   if (directive.operand.type !== "immediate") {
-    throw new AssemblerError(".BLKW must have a number literal operand");
+    throw new AssemblerError(".BLKW must have a number literal operand", line);
   }
   if (directive.operand.value < 0) {
-    throw new AssemblerError(".BLKW can't have a negative value");
+    throw new AssemblerError(".BLKW can't have a negative value", line);
   }
   return directive.operand.value;
 }
@@ -320,7 +332,7 @@ function statementSize(statement: Statement): number {
   const directive = statement.kind.directive;
   switch (directive.type) {
     case "blkw":
-      return blockSize(directive);
+      return blockSize(directive, statement.line);
     case "stringz":
       return Array.from(directive.value).length + 1;
     case "orig":

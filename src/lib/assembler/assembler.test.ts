@@ -96,6 +96,28 @@ describe("assembler", () => {
     ).toThrow("Multiple .ORIG blocks are not supported");
   });
 
+  it("reports the line of the statement that failed", () => {
+    const cases: Array<[string, string, number]> = [
+      [".ORIG x3000\nADD R0, R0, #1\nBR MISSING\n.END\n", "Label MISSING", 3],
+      [".ORIG x3000\nA ADD R0, R0, #1\nA HALT\n.END\n", "Duplicate label", 3],
+      [".ORIG x3000\nHALT\n.ORIG x4000\n.END\n", "Multiple .ORIG", 3],
+      [".ORIG x3000\nHALT\n.BLKW #-1\n.END\n", ".BLKW can't", 3],
+      [".ORIG x3000\n\nADD R0, R0, #99\n.END\n", "Immediate value 99", 3],
+      ["; header\nRET\n", "Expected .ORIG", 2],
+    ];
+    for (const [source, message, line] of cases) {
+      expect(() => assembleSource(source)).toThrow(
+        expect.objectContaining({
+          message: expect.stringContaining(message),
+          position: { line },
+        }),
+      );
+    }
+    expect(() => assemble({ statements: [] })).toThrow(
+      expect.objectContaining({ position: null }),
+    );
+  });
+
   it("reports missing origin, unresolved labels, and invalid block sizes", () => {
     expect(() => assemble({ statements: [] })).toThrow(AssemblerError);
     expect(() => assembleSource("RET\n")).toThrow(
