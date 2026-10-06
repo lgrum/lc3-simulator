@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
 import { hex } from "../lib/format";
-import { useSnapshot, useWorkbench } from "../workbench-provider";
+import { useMachineRead, useSnapshot } from "../workbench-provider";
 
 export type RunTone = "idle" | "running" | "paused" | "waiting" | "fault";
 
@@ -56,20 +56,19 @@ const LED: Record<RunTone, string> = {
 };
 
 export function RunState() {
-  // Reads the trace from the machine during render; see RegistersPanel.
-  "use no memo";
-  const { machine } = useWorkbench();
   const snapshot = useSnapshot();
-  const exception =
-    snapshot.pauseReason === "exception"
+  const exception = useMachineRead((machine) =>
+    machine.getSnapshot().pauseReason === "exception"
       ? machine.getTrace(1)[0]?.exception
-      : undefined;
+      : undefined,
+  );
   const { text, tone } = describeRunState(snapshot, exception);
   return (
     <output
       aria-live="polite"
+      title={text}
       className={cn(
-        "ml-auto flex h-8 flex-none items-center gap-2.5 rounded-[5px] bg-screen px-3 font-mono text-xs font-medium shadow-[inset_0_1px_3px_rgba(0,0,0,0.7)]",
+        "ml-auto flex h-8 min-w-24 shrink items-center gap-2.5 rounded-[5px] bg-screen px-3 font-mono text-xs font-medium shadow-[inset_0_1px_3px_rgba(0,0,0,0.7)]",
         tone === "fault" ? "text-[#ff9a80]" : "text-phosphor",
       )}
     >

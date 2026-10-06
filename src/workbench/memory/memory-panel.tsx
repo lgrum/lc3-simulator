@@ -6,7 +6,13 @@ import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
 import { toggleBreakpoint } from "../lib/breakpoints";
-import { asciiOf, hex, opcodeBits, parseWord, signed } from "../lib/format";
+import {
+  asciiOf,
+  hex,
+  opcodeBits,
+  resolveAddress,
+  signed,
+} from "../lib/format";
 import { EditableWord } from "../ui/editable-word";
 import { Panel, PanelHeader } from "../ui/surfaces";
 import { useChanges, useSnapshot, useWorkbench } from "../workbench-provider";
@@ -15,17 +21,6 @@ const ROW_HEIGHT = 22;
 const WORDS = 0x10000;
 const COLUMNS =
   "grid grid-cols-[20px_48px_minmax(0,0.9fr)_62px_34px_46px_minmax(0,2fr)_28px] items-center gap-x-2 pr-2";
-
-/** Looks up an address typed as a number or a label. */
-function resolveAddress(
-  text: string,
-  lookup: (name: string) => number | string | undefined,
-): number | undefined {
-  const word = parseWord(text);
-  if (word !== undefined) return word;
-  const symbol = lookup(text.trim());
-  return typeof symbol === "number" ? symbol : undefined;
-}
 
 function GoTo({ onGo }: { onGo: (addr: number) => void }) {
   const { machine } = useWorkbench();
@@ -190,8 +185,11 @@ function useFollowPc(
   const { pc, status } = useSnapshot();
   // Scrolling is a side effect on the DOM, so it belongs in an effect.
   useEffect(() => {
-    if (follow && status !== "running")
-      virtualizer.scrollToIndex(pc, { align: "auto" });
+    if (!follow || status === "running") return;
+    // Centre the PC once it leaves the view, so the next instructions show.
+    const range = virtualizer.range;
+    if (!range || pc <= range.startIndex || pc >= range.endIndex)
+      virtualizer.scrollToIndex(pc, { align: "center" });
   }, [virtualizer, follow, pc, status]);
 }
 

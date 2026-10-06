@@ -9,7 +9,12 @@ import { asciiOf, mnemonicOf, signed } from "../lib/format";
 import { EditableWord } from "../ui/editable-word";
 import { Lamps } from "../ui/lamps";
 import { Panel, PanelHeader } from "../ui/surfaces";
-import { useChanges, useSnapshot, useWorkbench } from "../workbench-provider";
+import {
+  useChanges,
+  useMachineRead,
+  useSnapshot,
+  useWorkbench,
+} from "../workbench-provider";
 
 type RowProps = {
   name: RegisterName;
@@ -98,13 +103,11 @@ function Flags({ n, z, p }: { n: boolean; z: boolean; p: boolean }) {
 }
 
 export function RegistersPanel() {
-  // Reads symbols from the machine during render, which React Compiler
-  // can't see change; the snapshot re-renders this panel instead.
-  "use no memo";
-  const { machine } = useWorkbench();
   const snapshot = useSnapshot();
   const supervisor = snapshot.privilege === "supervisor";
-  const pcLabel = machine.lookupSymbol(snapshot.pc);
+  const pcLabel = useMachineRead((machine) =>
+    machine.lookupSymbol(machine.getSnapshot().pc),
+  );
 
   return (
     <Panel aria-labelledby="registers-title">

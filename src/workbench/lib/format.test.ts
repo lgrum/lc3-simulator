@@ -8,6 +8,7 @@ import {
   mnemonicOf,
   opcodeBits,
   parseWord,
+  resolveAddress,
   signed,
 } from "./format";
 
@@ -51,5 +52,14 @@ describe("format", () => {
     expect(mnemonicOf(LC3, 0xc080)).toBe("JMP");
     expect(mnemonicOf(LC3, 0x8000)).toBe("RTI");
     expect(mnemonicOf(LC3, 0xd000)).toBeUndefined();
+  });
+
+  it("resolves addresses typed as numbers or labels", () => {
+    const symbols = new Map([["LOOP", 0x3002]]);
+    const lookup = (name: string) => symbols.get(name.toUpperCase());
+    expect(resolveAddress("x3000", lookup)).toBe(0x3000);
+    expect(resolveAddress("loop", lookup)).toBe(0x3002);
+    expect(resolveAddress("nowhere", lookup)).toBeUndefined();
+    expect(resolveAddress("  ", lookup)).toBeUndefined();
   });
 });

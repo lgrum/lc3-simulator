@@ -188,6 +188,10 @@ export class Debugger {
       if (point) point.enabled = !point.enabled;
       else this.breakpoints.add(normalized);
     },
+    setEnabled: (id: BreakpointId, enabled: boolean): void => {
+      const point = this.points.get(id);
+      if (point) point.enabled = enabled;
+    },
     list: (): ReadonlyArray<Breakpoint> =>
       [...this.points.values()].map(({ test: _test, ...point }) => ({
         ...point,

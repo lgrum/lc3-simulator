@@ -311,6 +311,19 @@ describe("review regressions", () => {
     expect(notifications).toBe(2);
     expect(machine.getSnapshot().version).toBeGreaterThan(added.version);
   });
+  it("enables and disables one breakpoint by id", () => {
+    const { machine, flush } = fixture("ADD R0, R0, #1\nHALT");
+    const first = machine.breakpoints.add(0x3001);
+    const second = machine.breakpoints.add(0x3001, { condition: "R0 == 9" });
+    machine.breakpoints.setEnabled(first, false);
+    expect(machine.breakpoints.list()).toMatchObject([
+      { id: first, enabled: false },
+      { id: second, enabled: true },
+    ]);
+    machine.run();
+    flush();
+    expect(machine.getSnapshot().pauseReason).not.toBe("breakpoint");
+  });
   it("lists watchpoints with their address and kind", () => {
     const { machine } = fixture("HALT");
     const read = machine.watchpoints.add(0x14000, "read");

@@ -413,6 +413,11 @@ class Controller {
       this.changed();
       this.notify();
     },
+    setEnabled: (id: BreakpointId, enabled: boolean): void => {
+      this.debugger.breakpoints.setEnabled(id, enabled);
+      this.changed();
+      this.notify();
+    },
     list: (): ReadonlyArray<Breakpoint> => this.debugger.breakpoints.list(),
   };
   readonly watchpoints = {

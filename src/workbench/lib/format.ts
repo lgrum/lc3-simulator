@@ -61,3 +61,14 @@ export function mnemonicOf(
     (spec) => spec.opcode === word >>> 12 && (spec.match?.(word) ?? true),
   )?.mnemonic;
 }
+
+/** Looks up an address typed as a number or a label, e.g. `x3000` or `LOOP`. */
+export function resolveAddress(
+  text: string,
+  lookup: (name: string) => number | string | undefined,
+): number | undefined {
+  const word = parseWord(text);
+  if (word !== undefined) return word;
+  const symbol = text.trim() === "" ? undefined : lookup(text.trim());
+  return typeof symbol === "number" ? symbol : undefined;
+}

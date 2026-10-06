@@ -84,6 +84,19 @@ export function useSnapshot(): MachineSnapshot {
   return useSyncExternalStore(subscribe, getSnapshot);
 }
 
+/**
+ * Reads machine state during render, e.g. disassembly or the breakpoint
+ * list. React Compiler assumes render reads are pure and would cache them,
+ * but the machine changes without React knowing; this hook always reads
+ * again and re-renders whenever the snapshot changes.
+ */
+export function useMachineRead<T>(read: (machine: MachineController) => T): T {
+  "use no memo";
+  const { machine } = useWorkbench();
+  useSnapshot();
+  return read(machine);
+}
+
 /** Registers and memory words that changed at the last stop. */
 export function useChanges() {
   const { changes } = useWorkbench();

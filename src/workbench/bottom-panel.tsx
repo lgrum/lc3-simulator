@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { m } from "@/paraglide/messages";
 
 import { ConsoleView, useWaitingForInput } from "./console/console-view";
+import { BreakpointsView } from "./debug/breakpoints-view";
+import { WatchpointsView } from "./debug/watchpoints-view";
 import { Screen } from "./ui/surfaces";
 import {
   ScreenTab,
@@ -11,9 +13,18 @@ import {
   ScreenTabPanel,
   ScreenTabs,
 } from "./ui/screen-tabs";
-import { useSnapshot } from "./workbench-provider";
+import { useMachineRead, useSnapshot } from "./workbench-provider";
 
 type BottomTab = "console" | "trace" | "breakpoints" | "watchpoints";
+
+function Count({ value }: { value: number }) {
+  if (value === 0) return null;
+  return (
+    <span className="rounded-full bg-white/8 px-1.5 font-mono text-[10.5px] text-silk">
+      {value}
+    </span>
+  );
+}
 
 function ToolButton({
   children,
@@ -45,6 +56,10 @@ export function BottomPanel() {
   const tab: BottomTab =
     waiting && choice.version !== version ? "console" : choice.tab;
   const [clearedAt, setClearedAt] = useState(0);
+  const counts = useMachineRead((machine) => ({
+    breakpoints: machine.breakpoints.list().length,
+    watchpoints: machine.watchpoints.list().length,
+  }));
 
   return (
     <Screen>
@@ -63,6 +78,14 @@ export function BottomPanel() {
               />
             )}
           </ScreenTab>
+          <ScreenTab value="breakpoints">
+            {m.breakpoints()}
+            <Count value={counts.breakpoints} />
+          </ScreenTab>
+          <ScreenTab value="watchpoints">
+            {m.watchpoints()}
+            <Count value={counts.watchpoints} />
+          </ScreenTab>
           <span className="ml-auto self-center">
             {tab === "console" && (
               <ToolButton onClick={() => setClearedAt(output.length)}>
@@ -73,6 +96,12 @@ export function BottomPanel() {
         </ScreenTabList>
         <ScreenTabPanel value="console" keepMounted>
           <ConsoleView clearedAt={clearedAt} />
+        </ScreenTabPanel>
+        <ScreenTabPanel value="breakpoints">
+          <BreakpointsView />
+        </ScreenTabPanel>
+        <ScreenTabPanel value="watchpoints">
+          <WatchpointsView />
         </ScreenTabPanel>
       </ScreenTabs>
     </Screen>
