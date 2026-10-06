@@ -1,4 +1,8 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "app_title": "Simulador LC-3"
+  "app_title": "Simulador LC-3",
+  "example_hello": "Hola, mundo",
+  "example_countdown": "Cuenta atrás",
+  "example_echo": "Eco de teclas",
+  "example_multiply": "Multiplicar en una subrutina"
 }

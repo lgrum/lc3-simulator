@@ -1,130 +1,99 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/inter";
+@import "@fontsource/chakra-petch/400.css";
+@import "@fontsource/chakra-petch/500.css";
+@import "@fontsource/chakra-petch/600.css";
+@import "@fontsource-variable/martian-mono";
 
 @plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: var(--color-white);
-  --foreground: var(--color-neutral-800);
-  --card: var(--color-white);
-  --card-foreground: var(--color-neutral-800);
-  --popover: var(--color-white);
-  --popover-foreground: var(--color-neutral-800);
-  --primary: var(--color-neutral-800);
-  --primary-foreground: var(--color-neutral-50);
-  --secondary: --alpha(var(--color-black) / 4%);
-  --secondary-foreground: var(--color-neutral-800);
-  --muted: --alpha(var(--color-black) / 4%);
-  --muted-foreground: color-mix(
-    in srgb,
-    var(--color-neutral-500) 90%,
-    var(--color-black)
-  );
-  --accent: --alpha(var(--color-black) / 4%);
-  --accent-foreground: var(--color-neutral-800);
-  --destructive: var(--color-red-500);
-  --destructive-foreground: var(--color-red-700);
-  --border: --alpha(var(--color-black) / 8%);
-  --input: --alpha(var(--color-black) / 10%);
-  --ring: var(--color-neutral-400);
-  --chart-1: var(--color-orange-600);
-  --chart-2: var(--color-teal-600);
-  --chart-3: var(--color-cyan-900);
-  --chart-4: var(--color-amber-400);
-  --chart-5: var(--color-amber-500);
-  --radius: 0.625rem;
-  --sidebar: var(--color-neutral-50);
-  --sidebar-foreground: color-mix(
-    in srgb,
-    var(--color-neutral-800) 64%,
-    var(--sidebar)
-  );
-  --sidebar-primary: var(--color-neutral-800);
-  --sidebar-primary-foreground: var(--color-neutral-50);
-  --sidebar-accent: --alpha(var(--color-black) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-800);
-  --sidebar-border: --alpha(var(--color-black) / 6%);
-  --sidebar-ring: var(--color-neutral-400);
-  --info: var(--color-blue-500);
-  --info-foreground: var(--color-blue-700);
-  --success: var(--color-emerald-500);
-  --success-foreground: var(--color-emerald-700);
-  --warning: var(--color-amber-500);
-  --warning-foreground: var(--color-amber-700);
-  --code: var(--color-white);
-  --code-foreground: var(--foreground);
-  --code-highlight: --alpha(var(--color-black) / 4%);
-}
+  color-scheme: dark;
 
-.dark {
-  --background: color-mix(
-    in srgb,
-    var(--color-neutral-950) 95%,
-    var(--color-white)
-  );
-  --foreground: var(--color-neutral-100);
-  --card: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --card-foreground: var(--color-neutral-100);
-  --popover: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --popover-foreground: var(--color-neutral-100);
-  --primary: var(--color-neutral-100);
-  --primary-foreground: var(--color-neutral-800);
-  --secondary: --alpha(var(--color-white) / 4%);
-  --secondary-foreground: var(--color-neutral-100);
+  /* Workbench palette, see .scratch/ui-design.md */
+  --case: #2a2c2e;
+  --case-2: #232527;
+  --edge: #3a3d40;
+  --edge-2: #44474b;
+  --silk: #c9c4b8;
+  --silk-2: #8c887e;
+  --silk-3: #6b675f;
+  --screen: #0f110d;
+  --screen-line: #1e211b;
+  --phosphor: #ffb547;
+  --lamp: #ff5a36;
+  --lamp-off: #3c2620;
+  --code-text: #d9e2d0;
+  --syntax-opcode: #9fd3ff;
+  --syntax-register: #f2d38a;
+  --syntax-directive: #d2a8ff;
+  --syntax-number: #a6e3a1;
+  --syntax-string: #e6a07e;
+  --syntax-comment: #6d7767;
+  --syntax-label: #ffffff;
+
+  /* coss-ui tokens mapped onto the palette */
+  --background: var(--case);
+  --foreground: var(--silk);
+  --card: var(--case-2);
+  --card-foreground: var(--silk);
+  --popover: #303235;
+  --popover-foreground: #ede8dc;
+  --primary: var(--phosphor);
+  --primary-foreground: #1b1406;
+  --secondary: --alpha(var(--color-white) / 6%);
+  --secondary-foreground: var(--silk);
   --muted: --alpha(var(--color-white) / 4%);
-  --muted-foreground: color-mix(
-    in srgb,
-    var(--color-neutral-500) 90%,
-    var(--color-white)
-  );
-  --accent: --alpha(var(--color-white) / 4%);
-  --accent-foreground: var(--color-neutral-100);
-  --destructive: color-mix(
-    in srgb,
-    var(--color-red-500) 90%,
-    var(--color-white)
-  );
-  --destructive-foreground: var(--color-red-400);
-  --border: --alpha(var(--color-white) / 6%);
-  --input: --alpha(var(--color-white) / 8%);
-  --ring: var(--color-neutral-500);
-  --chart-1: var(--color-blue-700);
-  --chart-2: var(--color-emerald-500);
-  --chart-3: var(--color-amber-500);
-  --chart-4: var(--color-purple-500);
-  --chart-5: var(--color-rose-500);
-  --sidebar: color-mix(
-    in srgb,
-    var(--color-neutral-950) 97%,
-    var(--color-white)
-  );
-  --sidebar-foreground: color-mix(
-    in srgb,
-    var(--color-neutral-100) 64%,
-    var(--sidebar)
-  );
-  --sidebar-primary: var(--color-neutral-100);
-  --sidebar-primary-foreground: var(--color-neutral-800);
-  --sidebar-accent: --alpha(var(--color-white) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-100);
-  --sidebar-border: --alpha(var(--color-white) / 5%);
-  --sidebar-ring: var(--color-neutral-400);
-  --info: var(--color-blue-500);
-  --info-foreground: var(--color-blue-400);
-  --success: var(--color-emerald-500);
-  --success-foreground: var(--color-emerald-400);
-  --warning: var(--color-amber-500);
-  --warning-foreground: var(--color-amber-400);
-  --code: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --code-foreground: var(--foreground);
+  --muted-foreground: var(--silk-2);
+  --accent: --alpha(var(--color-white) / 7%);
+  --accent-foreground: #ede8dc;
+  --destructive: var(--lamp);
+  --destructive-foreground: #ff9a80;
+  --border: var(--edge);
+  --input: var(--edge-2);
+  --ring: var(--phosphor);
+  --chart-1: var(--phosphor);
+  --chart-2: var(--lamp);
+  --chart-3: var(--syntax-opcode);
+  --chart-4: var(--syntax-number);
+  --chart-5: var(--syntax-directive);
+  --radius: 0.4rem;
+  --sidebar: var(--case-2);
+  --sidebar-foreground: var(--silk);
+  --sidebar-primary: var(--phosphor);
+  --sidebar-primary-foreground: #1b1406;
+  --sidebar-accent: --alpha(var(--color-white) / 6%);
+  --sidebar-accent-foreground: #ede8dc;
+  --sidebar-border: var(--edge);
+  --sidebar-ring: var(--phosphor);
+  --info: var(--syntax-opcode);
+  --info-foreground: var(--syntax-opcode);
+  --success: var(--syntax-number);
+  --success-foreground: var(--syntax-number);
+  --warning: var(--phosphor);
+  --warning-foreground: var(--phosphor);
+  --code: var(--screen);
+  --code-foreground: var(--code-text);
   --code-highlight: --alpha(var(--color-white) / 4%);
 }
 
 @theme inline {
-  --font-sans: "Inter", sans-serif;
+  --color-case: var(--case);
+  --color-case-2: var(--case-2);
+  --color-edge: var(--edge);
+  --color-edge-2: var(--edge-2);
+  --color-silk: var(--silk);
+  --color-silk-2: var(--silk-2);
+  --color-silk-3: var(--silk-3);
+  --color-screen: var(--screen);
+  --color-screen-line: var(--screen-line);
+  --color-phosphor: var(--phosphor);
+  --color-lamp: var(--lamp);
+  --color-lamp-off: var(--lamp-off);
+  --color-code-text: var(--code-text);
+  --font-sans: "Chakra Petch", system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -170,8 +139,8 @@
   --animate-toast-error-odd: toast-error-odd 0.28s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-error-even: toast-error-even 0.28s
     cubic-bezier(0.5, 1, 0.89, 1);
-  --font-heading: "Inter", sans-serif;
-  --font-mono: "Geist Mono", monospace;
+  --font-heading: "Chakra Petch", system-ui, sans-serif;
+  --font-mono: "Martian Mono Variable", ui-monospace, monospace;
   --color-code-highlight: var(--code-highlight);
   --code-foreground: var(--code-foreground);
   --color-code: var(--code);
