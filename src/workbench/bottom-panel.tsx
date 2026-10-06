@@ -5,6 +5,7 @@ import { m } from "@/paraglide/messages";
 
 import { ConsoleView, useWaitingForInput } from "./console/console-view";
 import { BreakpointsView } from "./debug/breakpoints-view";
+import { TraceView } from "./debug/trace-view";
 import { WatchpointsView } from "./debug/watchpoints-view";
 import { Screen } from "./ui/surfaces";
 import {
@@ -78,6 +79,7 @@ export function BottomPanel() {
               />
             )}
           </ScreenTab>
+          <ScreenTab value="trace">{m.trace()}</ScreenTab>
           <ScreenTab value="breakpoints">
             {m.breakpoints()}
             <Count value={counts.breakpoints} />
@@ -96,6 +98,9 @@ export function BottomPanel() {
         </ScreenTabList>
         <ScreenTabPanel value="console" keepMounted>
           <ConsoleView clearedAt={clearedAt} />
+        </ScreenTabPanel>
+        <ScreenTabPanel value="trace">
+          <TraceView />
         </ScreenTabPanel>
         <ScreenTabPanel value="breakpoints">
           <BreakpointsView />

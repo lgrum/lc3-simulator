@@ -2,18 +2,9 @@ import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 
-import { getLocale } from "@/paraglide/runtime";
-
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
-  beforeLoad: () => {
-    // The root still runs once at build time to prerender the shell.
-    if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("lang", getLocale());
-    }
-  },
-
   head: () => ({
     meta: [
       {

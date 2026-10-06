@@ -17,7 +17,7 @@ export function Toolbar() {
   const { assembly } = useWorkbench();
   useShortcuts();
   return (
-    <header className="flex min-w-0 items-center gap-1.5 border-b border-[#1c1d1f] px-3 whitespace-nowrap shadow-[0_1px_0_rgba(255,255,255,0.04)]">
+    <header className="flex min-w-0 items-center gap-1.5 overflow-x-auto border-b border-[#1c1d1f] px-3 whitespace-nowrap shadow-[0_1px_0_rgba(255,255,255,0.04)]">
       <h1 className="mr-1 text-lg font-semibold text-[#e8e3d6]">LC-3</h1>
       <FileMenu />
       <ExamplesMenu />

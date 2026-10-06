@@ -126,5 +126,18 @@
   "stops_every_hit": "every hit",
   "stops_from_hit": "from hit {count}",
   "location_line": "line {line}",
-  "location_os_line": "OS line {line}"
+  "location_os_line": "OS line {line}",
+  "trace": "Trace",
+  "trace_caption": "The most recent instructions, newest first, with what each changed",
+  "trace_changes": "Changes",
+  "trace_printed": "printed {text}",
+  "trace_interrupt": "interrupt {vector}",
+  "trace_exception": "exception: {kind}",
+  "trace_halted": "clock stopped",
+  "trace_running": "The trace shows the latest instructions when the machine pauses.",
+  "trace_empty": "No instructions yet. Step or run the program to fill the trace.",
+  "status_isa": "LC-3 · Patt & Patel, 3rd edition",
+  "status_mode_user": "user mode",
+  "status_mode_supervisor": "supervisor mode",
+  "status_language": "Language"
 }

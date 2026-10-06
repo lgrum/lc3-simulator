@@ -126,5 +126,18 @@
   "stops_every_hit": "en cada pasada",
   "stops_from_hit": "desde la pasada {count}",
   "location_line": "línea {line}",
-  "location_os_line": "línea {line} del SO"
+  "location_os_line": "línea {line} del SO",
+  "trace": "Traza",
+  "trace_caption": "Las instrucciones más recientes, de la última a la primera, con lo que cambió cada una",
+  "trace_changes": "Cambios",
+  "trace_printed": "imprimió {text}",
+  "trace_interrupt": "interrupción {vector}",
+  "trace_exception": "excepción: {kind}",
+  "trace_halted": "reloj detenido",
+  "trace_running": "La traza muestra las últimas instrucciones cuando la máquina se pausa.",
+  "trace_empty": "Aún no hay instrucciones. Avanza o ejecuta el programa para llenar la traza.",
+  "status_isa": "LC-3 · Patt y Patel, 3.ª edición",
+  "status_mode_user": "modo usuario",
+  "status_mode_supervisor": "modo supervisor",
+  "status_language": "Idioma"
 }
