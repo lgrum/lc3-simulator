@@ -5,6 +5,7 @@ import type { Virtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
+import { tracksPc } from "../actions";
 import { toggleBreakpoint } from "../lib/breakpoints";
 import {
   asciiOf,
@@ -188,15 +189,17 @@ function useFollowPc(
   virtualizer: Virtualizer<HTMLDivElement, Element>,
   follow: boolean,
 ) {
-  const { pc, status } = useSnapshot();
+  const snapshot = useSnapshot();
+  const { pc } = snapshot;
+  const tracking = tracksPc(snapshot);
   // Scrolling is a side effect on the DOM, so it belongs in an effect.
   useEffect(() => {
-    if (!follow || status === "running") return;
+    if (!follow || !tracking) return;
     // Centre the PC once it leaves the view, so the next instructions show.
     const range = virtualizer.range;
     if (!range || pc <= range.startIndex || pc >= range.endIndex)
       virtualizer.scrollToIndex(pc, { align: "center" });
-  }, [virtualizer, follow, pc, status]);
+  }, [virtualizer, follow, pc, tracking]);
 }
 
 type GoToRequest = { addr: number; request: number };
@@ -234,7 +237,7 @@ function MemoryTable({
   const breakpoints = new Map(
     machine.breakpoints.list().map((point) => [point.addr, point.enabled]),
   );
-  const showPc = snapshot.status !== "running";
+  const showPc = tracksPc(snapshot);
 
   return (
     <div

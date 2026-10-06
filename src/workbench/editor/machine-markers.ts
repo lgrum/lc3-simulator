@@ -14,6 +14,7 @@ import type { Diagnostic } from "@codemirror/lint";
 import type { AssemblyError } from "@/lib/assembler/assemble-source";
 import type { MachineController } from "@/lib/simulator/controller";
 
+import { tracksPc } from "../actions";
 import type { LineMap } from "../lib/line-map";
 
 export type SourceKind = "program" | "os";
@@ -100,7 +101,7 @@ function readMarkers({ machine, kind, lines }: MarkerOptions): Markers {
   const map = lines();
   const snapshot = machine.getSnapshot();
   let pcLine: number | null = null;
-  if (snapshot.status !== "running") {
+  if (tracksPc(snapshot)) {
     const word = machine.disassemble(snapshot.pc);
     if (word.source === kind && word.sourceLine !== undefined)
       pcLine = word.sourceLine;

@@ -61,6 +61,15 @@ export function availableControls(snapshot: MachineSnapshot) {
   };
 }
 
+/**
+ * Whether the views should follow the PC: always while paused, and while
+ * running at a speed slow enough to watch. At max speed the PC moves too fast
+ * to show.
+ */
+export function tracksPc(snapshot: MachineSnapshot): boolean {
+  return snapshot.status !== "running" || snapshot.speed !== "max";
+}
+
 export type ControlName = keyof ReturnType<typeof availableControls>;
 
 /**

@@ -71,6 +71,8 @@ export type MachineSnapshot = {
   pauseReason: PauseReason | null;
   /** Whether stepBack() has history to undo. */
   canStepBack: boolean;
+  /** Instructions per second while running, as set by setSpeed(). */
+  speed: number | "max";
   version: number;
 };
 export type Scheduler = {
@@ -392,6 +394,8 @@ class Controller {
       this.lastTime = this.scheduler.now();
       this.schedule();
     }
+    this.changed();
+    this.notify();
   }
   readonly breakpoints = {
     add: (
@@ -452,6 +456,7 @@ class Controller {
       status: this.status,
       pauseReason: this.pauseReason,
       canStepBack: this.history.length > 0,
+      speed: this.speed,
       version: this.version,
     });
     return this.snapshot;

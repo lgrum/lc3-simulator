@@ -10,7 +10,6 @@ import {
   TextCursorIcon,
   Undo2Icon,
 } from "lucide-react";
-import { useState } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -139,7 +138,7 @@ function speedLabel(speed: Speed): string {
 
 function SpeedControl() {
   const { machine } = useWorkbench();
-  const [speed, setSpeed] = useState<Speed>("max");
+  const speed = String(useSnapshot().speed) as Speed;
   return (
     <Menu>
       <MenuTrigger render={<Key tone="flat" aria-label={m.speed()} />}>
@@ -152,10 +151,9 @@ function SpeedControl() {
       <MenuPopup align="end">
         <MenuRadioGroup
           value={speed}
-          onValueChange={(value: Speed) => {
-            setSpeed(value);
-            machine.setSpeed(value === "max" ? "max" : Number(value));
-          }}
+          onValueChange={(value: Speed) =>
+            machine.setSpeed(value === "max" ? "max" : Number(value))
+          }
         >
           {/* Base UI requires group labels inside their group. */}
           <MenuGroupLabel>{m.speed_label()}</MenuGroupLabel>

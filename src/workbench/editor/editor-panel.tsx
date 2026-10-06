@@ -2,6 +2,7 @@ import { Suspense, lazy, useState } from "react";
 
 import { m } from "@/paraglide/messages";
 
+import { tracksPc } from "../actions";
 import { Screen } from "../ui/surfaces";
 import {
   ScreenTab,
@@ -25,11 +26,13 @@ const CodeView = lazy(() =>
   import("./code-view").then((module) => ({ default: module.CodeView })),
 );
 
-/** The file the PC is in while paused; undefined while running. */
+/** The file the PC is in; undefined while running too fast to follow. */
 function usePcSource(): SourceKind | undefined {
   return useMachineRead((machine) => {
-    const { status, pc } = machine.getSnapshot();
-    return status === "running" ? undefined : machine.disassemble(pc).source;
+    const snapshot = machine.getSnapshot();
+    return tracksPc(snapshot)
+      ? machine.disassemble(snapshot.pc).source
+      : undefined;
   });
 }
 

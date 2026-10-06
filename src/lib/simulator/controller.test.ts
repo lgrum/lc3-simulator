@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { assemble } from "../assembler/assembler";
 import { tokenize } from "../assembler/lexer";
 import { parse } from "../assembler/parser";
@@ -336,6 +336,15 @@ describe("review regressions", () => {
     expect(machine.watchpoints.list()).toEqual([
       { id: rw, addr: 0x4001, kind: "rw" },
     ]);
+  });
+  it("reports the speed in the snapshot", () => {
+    const { machine } = fixture("HALT");
+    const listener = vi.fn();
+    machine.subscribe(listener);
+    expect(machine.getSnapshot().speed).toBe("max");
+    machine.setSpeed(10);
+    expect(machine.getSnapshot().speed).toBe(10);
+    expect(listener).toHaveBeenCalled();
   });
   it("reports whether there is history to step back through", () => {
     const { machine } = fixture("ADD R0, R0, #1\nADD R0, R0, #1\nHALT");
