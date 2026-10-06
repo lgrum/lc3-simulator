@@ -7,7 +7,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
-import { nitro } from "nitro/vite";
 
 const config = defineConfig({
   staged: {
@@ -270,9 +269,11 @@ const config = defineConfig({
       outdir: "./src/paraglide",
       strategy: ["url", "baseLocale"],
     }),
-    nitro({ rollupConfig: { external: [/^@sentry\//] } }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      // Emit the SPA shell as index.html so any static host serves it at /.
+      spa: { enabled: true, prerender: { outputPath: "/index" } },
+    }),
     viteReact(),
     babel({ presets: [reactCompilerPreset()] }),
   ]),
