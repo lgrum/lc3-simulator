@@ -115,7 +115,10 @@ export function RegistersPanel() {
         <span className="text-xs text-silk-2">{m.registers_hint()}</span>
       </PanelHeader>
       <div className="overflow-x-auto px-3 py-2">
-        <table className="w-full border-separate border-spacing-y-[3px] text-[13px]">
+        <table
+          translate="no"
+          className="w-full border-separate border-spacing-y-[3px] text-[13px]"
+        >
           <caption className="sr-only">{m.registers_caption()}</caption>
           <thead className="sr-only">
             <tr>
@@ -130,7 +133,7 @@ export function RegistersPanel() {
           <tbody>
             {snapshot.regs.map((value, i) => (
               <RegisterRow
-                key={i}
+                key={`R${i}`}
                 name={`R${i}` as RegisterName}
                 value={value}
                 numbers

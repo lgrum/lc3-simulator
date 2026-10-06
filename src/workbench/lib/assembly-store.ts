@@ -34,7 +34,10 @@ export class AssemblyStore {
   private readonly listeners = new Set<() => void>();
 
   constructor(
-    private readonly machine: Pick<MachineController, "load">,
+    private readonly machine: Pick<
+      MachineController,
+      "load" | "breakpoints" | "watchpoints"
+    >,
     private readonly changes: Pick<ChangeTracker, "rebase">,
     private readonly source: SourceStore,
   ) {}
@@ -68,8 +71,16 @@ export class AssemblyStore {
     return true;
   }
 
-  /** Replaces the editor buffer, e.g. with an example, and assembles it. */
+  /**
+   * Replaces the editor buffer, e.g. with an example, and assembles it. A
+   * different program starts without the old one's breakpoints and
+   * watchpoints, which the machine keeps by address.
+   */
   openFile(file: SourceFile): boolean {
+    for (const point of this.machine.breakpoints.list())
+      this.machine.breakpoints.remove(point.id);
+    for (const watch of this.machine.watchpoints.list())
+      this.machine.watchpoints.remove(watch.id);
     this.source.replace(file);
     return this.assemble();
   }

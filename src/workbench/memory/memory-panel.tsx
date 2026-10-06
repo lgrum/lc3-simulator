@@ -37,6 +37,8 @@ function GoTo({ onGo }: { onGo: (addr: number) => void }) {
       }}
     >
       <input
+        name="go-to"
+        autoComplete="off"
         aria-label={m.memory_go_to_label()}
         aria-invalid={notFound}
         title={notFound ? m.memory_go_to_not_found() : undefined}
@@ -47,8 +49,12 @@ function GoTo({ onGo }: { onGo: (addr: number) => void }) {
           setText(event.currentTarget.value);
           setNotFound(false);
         }}
+        translate="no"
         className="h-6 w-48 rounded-[4px] bg-screen px-2 font-mono text-[11.5px] text-silk shadow-[inset_0_1px_3px_rgba(0,0,0,0.7)] outline-none placeholder:text-silk-3 focus-visible:ring-2 focus-visible:ring-phosphor/70 aria-invalid:ring-2 aria-invalid:ring-lamp"
       />
+      <span role="status" className="sr-only">
+        {notFound ? m.memory_go_to_not_found() : ""}
+      </span>
     </form>
   );
 }
@@ -234,6 +240,7 @@ function MemoryTable({
     <div
       role="table"
       aria-label={m.memory()}
+      translate="no"
       aria-rowcount={WORDS + 1}
       className="flex min-h-0 flex-1 flex-col"
     >

@@ -148,7 +148,7 @@ function extensionsFor(
     highlightActiveLine(),
     asmLanguage(),
     theme,
-    EditorView.contentAttributes.of({ "aria-label": label }),
+    EditorView.contentAttributes.of({ "aria-label": label, translate: "no" }),
     trackCursor(workbench, kind),
   ];
   if (kind === "os")

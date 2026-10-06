@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 
 import { m } from "@/paraglide/messages";
 
@@ -17,8 +17,13 @@ import {
   useSourceFile,
   useWorkbench,
 } from "../workbench-provider";
-import { CodeView } from "./code-view";
 import type { SourceKind } from "./machine-markers";
+
+// CodeMirror is the largest dependency; loading it separately lets the rest
+// of the workbench appear while it downloads.
+const CodeView = lazy(() =>
+  import("./code-view").then((module) => ({ default: module.CodeView })),
+);
 
 /** The file the PC is in while paused; undefined while running. */
 function usePcSource(): SourceKind | undefined {
@@ -84,12 +89,18 @@ export function EditorPanel() {
             </span>
           </ScreenTab>
         </ScreenTabList>
-        <ScreenTabPanel value="program" keepMounted>
-          <CodeView kind="program" label={m.editor_program_label()} />
-        </ScreenTabPanel>
-        <ScreenTabPanel value="os" keepMounted>
-          <CodeView kind="os" label={m.editor_os_label()} />
-        </ScreenTabPanel>
+        <Suspense
+          fallback={
+            <p className="p-4 text-xs text-silk-2">{m.editor_loading()}</p>
+          }
+        >
+          <ScreenTabPanel value="program" keepMounted>
+            <CodeView kind="program" label={m.editor_program_label()} />
+          </ScreenTabPanel>
+          <ScreenTabPanel value="os" keepMounted>
+            <CodeView kind="os" label={m.editor_os_label()} />
+          </ScreenTabPanel>
+        </Suspense>
       </ScreenTabs>
       <AssemblyError />
     </Screen>

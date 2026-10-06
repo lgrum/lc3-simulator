@@ -59,7 +59,7 @@ export function TraceView() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <table className="w-full font-mono text-xs">
+      <table translate="no" className="w-full font-mono text-xs">
         <caption className="sr-only">{m.trace_caption()}</caption>
         <thead className="sticky top-0 bg-screen text-left font-sans text-silk-2">
           <tr>

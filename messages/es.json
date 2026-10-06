@@ -78,8 +78,8 @@
   "saved_ssp": "pila del supervisor guardada",
   "memory": "Memoria",
   "memory_go_to_label": "Ir a una dirección o etiqueta",
-  "memory_go_to_placeholder": "Ir a dirección o etiqueta",
-  "memory_go_to_not_found": "No existe esa dirección o etiqueta",
+  "memory_go_to_placeholder": "x3000 o LOOP…",
+  "memory_go_to_not_found": "No existe esa dirección o etiqueta. Usa una dirección hexadecimal como x3000 o una etiqueta de tu programa.",
   "memory_follow_pc": "Seguir el PC",
   "memory_pc_here": "(PC)",
   "breakpoint_add": "Añadir un punto de interrupción en {addr}",
@@ -114,7 +114,7 @@
   "watch_write": "escribir",
   "watch_read": "leer",
   "watch_rw": "leer o escribir",
-  "error_no_address": "No existe esa dirección o etiqueta.",
+  "error_no_address": "No existe esa dirección o etiqueta. Usa una dirección hexadecimal como x3000 o una etiqueta de tu programa.",
   "error_condition": "La condición no es válida. Usa registros, N, Z, P, números como x41 o #65 y operadores como == != < && || & |.",
   "error_hit_count": "Usa un número entero desde 1.",
   "column_enabled": "Activado",
@@ -139,5 +139,6 @@
   "status_isa": "LC-3 · Patt y Patel, 3.ª edición",
   "status_mode_user": "modo usuario",
   "status_mode_supervisor": "modo supervisor",
-  "status_language": "Idioma"
+  "status_language": "Idioma",
+  "editor_loading": "Cargando el editor…"
 }

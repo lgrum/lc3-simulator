@@ -31,7 +31,7 @@ export function Field({
         {...props}
       />
       {error && (
-        <span id={id} className="text-[#ff9a80]">
+        <span id={id} role="alert" className="text-[#ff9a80]">
           {error}
         </span>
       )}

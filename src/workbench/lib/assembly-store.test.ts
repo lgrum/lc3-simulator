@@ -44,4 +44,17 @@ describe("AssemblyStore", () => {
     );
     expect(source.getFile().name).toBe("b.asm");
   });
+
+  it("keeps breakpoints on re-assemble but not for another file", () => {
+    const { machine, store } = setup(".ORIG x3000\nHALT\n.END");
+    store.assemble();
+    machine.breakpoints.add(0x3000);
+    machine.watchpoints.add(0x3000, "rw");
+    store.assemble();
+    expect(machine.breakpoints.list()).toHaveLength(1);
+
+    store.openFile({ name: "b.asm", text: ".ORIG x3000\nHALT" });
+    expect(machine.breakpoints.list()).toHaveLength(0);
+    expect(machine.watchpoints.list()).toHaveLength(0);
+  });
 });

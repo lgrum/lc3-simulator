@@ -42,7 +42,10 @@ export function ScreenTabPanel({
 }: ComponentProps<typeof Tabs.Panel>) {
   return (
     <Tabs.Panel
-      className={cn("min-h-0 flex-1 outline-none", className)}
+      className={cn(
+        "min-h-0 flex-1 outline-none focus-visible:ring-2 focus-visible:ring-phosphor/70 focus-visible:ring-inset",
+        className,
+      )}
       {...props}
     />
   );

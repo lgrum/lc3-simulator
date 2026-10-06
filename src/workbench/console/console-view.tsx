@@ -68,6 +68,7 @@ export function ConsoleView({ clearedAt }: { clearedAt: number }) {
       <div className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto px-4 py-2.5">
         <pre
           role="log"
+          translate="no"
           aria-label={m.console_output_label()}
           className="font-mono text-[15px] leading-6 whitespace-pre-wrap text-phosphor [text-shadow:0_0_6px_rgba(255,181,71,0.5)]"
         >
