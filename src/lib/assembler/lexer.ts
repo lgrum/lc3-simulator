@@ -374,4 +374,4 @@ export function tokenize(input: string): Array<Token> {
   return Lexer.tokenize(input);
 }
 
-export { parseRegister };
+export { isOpcode, isTrapRoutine, parseRegister };

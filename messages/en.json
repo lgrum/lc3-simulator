@@ -4,5 +4,18 @@
   "example_hello": "Hello, world",
   "example_countdown": "Count down",
   "example_echo": "Echo keys",
-  "example_multiply": "Multiply in a subroutine"
+  "example_multiply": "Multiply in a subroutine",
+  "assemble": "Assemble",
+  "assemble_hint": "Assemble the program and load it",
+  "assembly_error_at_line": "Line {line}: {message}",
+  "editor_modified": "Edited since the last assemble",
+  "editor_read_only": "read-only",
+  "editor_program_label": "Program source",
+  "editor_os_label": "Operating system source, read-only",
+  "menu_file": "File",
+  "menu_examples": "Examples",
+  "file_new": "New file",
+  "file_open": "Open .asm file…",
+  "file_save": "Save as .asm",
+  "file_replace_confirm": "Replace the program in the editor? Your changes are not saved anywhere else."
 }

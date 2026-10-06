@@ -4,5 +4,18 @@
   "example_hello": "Hola, mundo",
   "example_countdown": "Cuenta atrás",
   "example_echo": "Eco de teclas",
-  "example_multiply": "Multiplicar en una subrutina"
+  "example_multiply": "Multiplicar en una subrutina",
+  "assemble": "Ensamblar",
+  "assemble_hint": "Ensamblar el programa y cargarlo",
+  "assembly_error_at_line": "Línea {line}: {message}",
+  "editor_modified": "Editado desde el último ensamblado",
+  "editor_read_only": "solo lectura",
+  "editor_program_label": "Código del programa",
+  "editor_os_label": "Código del sistema operativo, solo lectura",
+  "menu_file": "Archivo",
+  "menu_examples": "Ejemplos",
+  "file_new": "Archivo nuevo",
+  "file_open": "Abrir archivo .asm…",
+  "file_save": "Guardar como .asm",
+  "file_replace_confirm": "¿Reemplazar el programa del editor? Tus cambios no están guardados en ningún otro sitio."
 }
