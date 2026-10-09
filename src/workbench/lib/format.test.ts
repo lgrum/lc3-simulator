@@ -4,9 +4,12 @@ import { LC3 } from "@/lib/simulator/isa/lc3";
 
 import {
   asciiOf,
+  fixedPoint,
+  formatFixed,
   hex,
   mnemonicOf,
   opcodeBits,
+  parseFixed,
   parseWord,
   resolveAddress,
   signed,
@@ -61,5 +64,48 @@ describe("format", () => {
     expect(resolveAddress("loop", lookup)).toBe(0x3002);
     expect(resolveAddress("nowhere", lookup)).toBeUndefined();
     expect(resolveAddress("  ", lookup)).toBeUndefined();
+  });
+});
+
+describe("fixed point", () => {
+  it("reads Q0 as the signed integer", () => {
+    expect(fixedPoint(0xfffb, 0)).toBe(-5);
+    expect(formatFixed(0x7fff, 0)).toEqual({ text: "32767", exact: "32767" });
+  });
+  it("uses bit 15 as the two's-complement sign", () => {
+    expect(formatFixed(0x0004, 3).text).toBe("0.5");
+    expect(formatFixed(0xfffc, 3).text).toBe("-0.5");
+    expect(formatFixed(0x8000, 15).text).toBe("-1");
+    expect(formatFixed(0x0300, 8).text).toBe("3");
+    expect(formatFixed(0x0000, 15).text).toBe("0");
+  });
+  it("shows up to six decimals exactly and rounds beyond that", () => {
+    expect(formatFixed(0x0001, 6)).toEqual({
+      text: "0.015625",
+      exact: "0.015625",
+    });
+    expect(formatFixed(0x7fff, 15)).toEqual({
+      text: "≈0.999969",
+      exact: "0.999969482421875",
+    });
+    expect(formatFixed(0xffff, 15)).toEqual({
+      text: "≈-0.000031",
+      exact: "-0.000030517578125",
+    });
+  });
+  it("parses decimal fractions to the nearest Qn word", () => {
+    expect(parseFixed("0.75", 2)).toBe(0x0003);
+    expect(parseFixed("-0.5", 15)).toBe(0xc000);
+    expect(parseFixed("#1.5", 8)).toBe(0x0180);
+    expect(parseFixed(".5", 1)).toBe(0x0001);
+    expect(parseFixed("0.3", 2)).toBe(0x0001);
+    expect(parseFixed("-1.0", 15)).toBe(0x8000);
+  });
+  it("rejects integers, Q0, and values out of range", () => {
+    expect(parseFixed("1", 8)).toBeUndefined();
+    expect(parseFixed("x10", 8)).toBeUndefined();
+    expect(parseFixed("0.5", 0)).toBeUndefined();
+    expect(parseFixed("1.0", 15)).toBeUndefined();
+    expect(parseFixed("128.0", 8)).toBeUndefined();
   });
 });

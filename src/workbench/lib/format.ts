@@ -10,6 +10,58 @@ export function signed(value: number): number {
   return word & 0x8000 ? word - 0x10000 : word;
 }
 
+/** Fixed-point formats run from Q0 (plain integers) to Q15. */
+export const MAX_FRACTION_BITS = 15;
+
+/**
+ * The word as a two's-complement Qn number: `fractionBits` bits after the
+ * binary point, bit 15 the sign. Q0 is the signed integer.
+ */
+export function fixedPoint(value: number, fractionBits: number): number {
+  return signed(value) / 2 ** fractionBits;
+}
+
+function trimZeros(text: string): string {
+  return text.includes(".") ? text.replace(/\.?0+$/, "") : text;
+}
+
+/** Decimals shown before rounding; enough to tell all Q15 values apart. */
+const FIXED_DECIMALS = 6;
+
+/**
+ * A Qn value as text, e.g. "-0.75". Values needing more than six decimals
+ * are rounded and marked with "≈"; `exact` always holds the full value.
+ */
+export function formatFixed(
+  value: number,
+  fractionBits: number,
+): { text: string; exact: string } {
+  const number = fixedPoint(value, fractionBits);
+  // A word over 2^n has at most n decimals, so toFixed(n) is exact.
+  const exact = trimZeros(number.toFixed(fractionBits));
+  const rounded = trimZeros(
+    number.toFixed(Math.min(fractionBits, FIXED_DECIMALS)),
+  );
+  return { text: rounded === exact ? exact : `≈${rounded}`, exact };
+}
+
+/**
+ * Parses a decimal fraction typed in Qn mode, e.g. `0.75`, `-1.5` or
+ * `#0.25`, rounding to the nearest Qn value. Returns undefined for text
+ * without a decimal point, for Q0, and for values out of range.
+ */
+export function parseFixed(
+  text: string,
+  fractionBits: number,
+): number | undefined {
+  const input = text.trim().replace(/^#/, "");
+  if (fractionBits === 0 || !/^-?(\d+\.\d*|\.\d+)$/.test(input))
+    return undefined;
+  const raw = Math.round(Number(input) * 2 ** fractionBits);
+  if (raw < -0x8000 || raw > 0x7fff) return undefined;
+  return raw & 0xffff;
+}
+
 /** Bits 15–12, the opcode field. */
 export function opcodeBits(value: number): string {
   return ((value >>> 12) & 0xf).toString(2).padStart(4, "0");

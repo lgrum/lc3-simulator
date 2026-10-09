@@ -10,6 +10,8 @@ type EditableWordProps = {
   /** What the value is, e.g. "R0" or "x3000", for its accessible name. */
   name: string;
   onCommit: (value: number) => void;
+  /** Reads what the user typed; parseWord by default. */
+  parse?: (text: string) => number | undefined;
   disabled?: boolean;
   className?: string;
 };
@@ -22,11 +24,12 @@ export function EditableWord({
   value,
   name,
   onCommit,
+  parse = parseWord,
   disabled,
   className,
 }: EditableWordProps) {
   const [draft, setDraft] = useState<string | null>(null);
-  const parsed = draft === null ? undefined : parseWord(draft);
+  const parsed = draft === null ? undefined : parse(draft);
   const invalid = draft !== null && draft.trim() !== "" && parsed === undefined;
 
   const finish = (save: boolean) => {

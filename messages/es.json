@@ -144,5 +144,10 @@
   "status_theme": "Tema",
   "theme_system": "Sistema",
   "theme_light": "Claro",
-  "theme_dark": "Oscuro"
+  "theme_dark": "Oscuro",
+  "registers_hint_fixed": "Haz clic en un valor para editarlo, p. ej. 0.75",
+  "number_format": "Formato numérico",
+  "number_format_label": "Punto fijo: bits fraccionarios",
+  "number_format_integer": "{q} · entero",
+  "column_fixed": "Valor {q}"
 }

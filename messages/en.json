@@ -144,5 +144,10 @@
   "status_theme": "Theme",
   "theme_system": "System",
   "theme_light": "Light",
-  "theme_dark": "Dark"
+  "theme_dark": "Dark",
+  "registers_hint_fixed": "Click a value to edit it, e.g. 0.75",
+  "number_format": "Number format",
+  "number_format_label": "Fixed point: fraction bits",
+  "number_format_integer": "{q} · integer",
+  "column_fixed": "{q} value"
 }
