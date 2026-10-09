@@ -1,9 +1,4 @@
-import {
-  defaultKeymap,
-  history,
-  historyKeymap,
-  indentWithTab,
-} from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap } from "@codemirror/search";
 import { EditorState } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
@@ -30,6 +25,7 @@ import {
   machineMarkers,
 } from "./machine-markers";
 import type { SourceKind } from "./machine-markers";
+import { TAB_WIDTH, tabStops } from "./tab-stops";
 
 const theme = EditorView.theme(
   {
@@ -147,6 +143,7 @@ function extensionsFor(
     drawSelection(),
     highlightActiveLine(),
     asmLanguage(),
+    EditorState.tabSize.of(TAB_WIDTH),
     theme,
     EditorView.contentAttributes.of({ "aria-label": label, translate: "no" }),
     trackCursor(workbench, kind),
@@ -174,12 +171,8 @@ function extensionsFor(
     }),
     ...common,
     history(),
-    keymap.of([
-      ...defaultKeymap,
-      ...historyKeymap,
-      ...searchKeymap,
-      indentWithTab,
-    ]),
+    tabStops(),
+    keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
     sourceSync(workbench.source),
     assemblyDiagnostics(() => assembly.getState().error, assembly.subscribe),
   ];
