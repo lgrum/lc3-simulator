@@ -21,7 +21,7 @@ type BottomTab = "console" | "trace" | "breakpoints" | "watchpoints";
 function Count({ value }: { value: number }) {
   if (value === 0) return null;
   return (
-    <span className="rounded-full bg-white/8 px-1.5 font-mono text-[10.5px] text-silk">
+    <span className="rounded-full bg-tint/8 px-1.5 font-mono text-[10.5px] text-silk">
       {value}
     </span>
   );
@@ -38,7 +38,7 @@ function ToolButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-[4px] px-2 py-1 text-xs text-silk-2 outline-none hover:bg-white/5 hover:text-silk focus-visible:ring-2 focus-visible:ring-phosphor/70"
+      className="rounded-[4px] px-2 py-1 text-xs text-silk-2 outline-none hover:bg-tint/5 hover:text-silk focus-visible:ring-2 focus-visible:ring-phosphor/70"
     >
       {children}
     </button>

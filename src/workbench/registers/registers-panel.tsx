@@ -51,8 +51,8 @@ function RegisterRow({ name, value, numbers, note }: RowProps) {
           onCommit={(next) => machine.writeRegister(name, next)}
           className={
             changed
-              ? "text-phosphor [text-shadow:0_0_5px_rgba(255,181,71,0.45)]"
-              : "text-[#f2ebdd]"
+              ? "text-phosphor [text-shadow:0_0_5px_var(--phosphor-glow)]"
+              : "text-silk-hi"
           }
         />
       </td>

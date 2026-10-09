@@ -82,8 +82,8 @@ export function TraceView() {
               key={i}
               className="border-t border-screen-line align-top first:text-phosphor"
             >
-              <td className="px-4 py-1 text-[#6c7765]">{hex(event.pc)}</td>
-              <td className="py-1 pr-4 text-[#d9e2d0]">{text}</td>
+              <td className="px-4 py-1 text-code-dim">{hex(event.pc)}</td>
+              <td className="py-1 pr-4 text-code-text">{text}</td>
               <td className="py-1 pr-4 text-silk-2">
                 {describeStep(event).join(" · ")}
               </td>

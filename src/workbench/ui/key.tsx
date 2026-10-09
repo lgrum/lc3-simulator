@@ -11,9 +11,9 @@ const keyVariants = cva(
     variants: {
       tone: {
         default:
-          "border-[#4a4d52] bg-linear-to-b from-[#3e4145] to-[#34373a] text-[#ede8dc] shadow-[0_1px_0_#18191b] hover:from-[#46494d] hover:to-[#3a3d41] active:translate-y-px active:shadow-none",
-        run: "border-[#7a4a38] bg-linear-to-b from-[#5b3a2e] to-[#4a2d23] text-[#ffd2c2] shadow-[0_1px_0_#18191b] hover:from-[#664134] hover:to-[#523227] active:translate-y-px active:shadow-none",
-        flat: "border-transparent text-silk hover:bg-white/6 data-popup-open:bg-white/8",
+          "border-key-border bg-linear-to-b from-key-top to-key-bottom text-key-text shadow-[0_1px_0_var(--key-shadow)] hover:from-key-hover-top hover:to-key-hover-bottom active:translate-y-px active:shadow-none",
+        run: "border-run-border bg-linear-to-b from-run-top to-run-bottom text-run-text shadow-[0_1px_0_var(--key-shadow)] hover:from-run-hover-top hover:to-run-hover-bottom active:translate-y-px active:shadow-none",
+        flat: "border-transparent text-silk hover:bg-tint/6 data-popup-open:bg-tint/8",
       },
     },
     defaultVariants: { tone: "default" },

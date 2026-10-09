@@ -28,7 +28,7 @@ export function ScreenTab({
   return (
     <Tabs.Tab
       className={cn(
-        "-mb-px inline-flex items-center gap-1.5 border-b-2 border-transparent px-3 py-1.5 text-[13px] text-silk-2 outline-none hover:text-silk focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-phosphor/70 data-active:border-phosphor data-active:text-[#ede8dc]",
+        "-mb-px inline-flex items-center gap-1.5 border-b-2 border-transparent px-3 py-1.5 text-[13px] text-silk-2 outline-none hover:text-silk focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-phosphor/70 data-active:border-phosphor data-active:text-silk-hi",
         className,
       )}
       {...props}

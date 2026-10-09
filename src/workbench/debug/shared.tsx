@@ -9,7 +9,7 @@ import { m } from "@/paraglide/messages";
 import { hex } from "../lib/format";
 
 export const inputClass =
-  "h-7 rounded-[4px] border border-edge-2 bg-[#16180f] px-2 font-mono text-xs text-silk outline-none placeholder:text-silk-3 focus-visible:ring-2 focus-visible:ring-phosphor/70 aria-invalid:border-lamp";
+  "h-7 rounded-[4px] border border-edge-2 bg-field px-2 font-mono text-xs text-silk outline-none placeholder:text-silk-3 focus-visible:ring-2 focus-visible:ring-phosphor/70 aria-invalid:border-lamp";
 
 /** A labelled input with an optional error below it. */
 export function Field({
@@ -31,7 +31,7 @@ export function Field({
         {...props}
       />
       {error && (
-        <span id={id} role="alert" className="text-[#ff9a80]">
+        <span id={id} role="alert" className="text-error">
           {error}
         </span>
       )}
@@ -43,7 +43,7 @@ export function AddButton({ children }: { children: ReactNode }) {
   return (
     <button
       type="submit"
-      className="h-7 self-end rounded-[4px] border border-[#4a4d52] bg-linear-to-b from-[#3e4145] to-[#34373a] px-3 text-xs font-medium text-[#ede8dc] outline-none hover:from-[#46494d] focus-visible:ring-2 focus-visible:ring-phosphor/70"
+      className="h-7 self-end rounded-[4px] border border-key-border bg-linear-to-b from-key-top to-key-bottom px-3 text-xs font-medium text-key-text outline-none hover:from-key-hover-top hover:to-key-hover-bottom focus-visible:ring-2 focus-visible:ring-phosphor/70"
     >
       {children}
     </button>
@@ -62,7 +62,7 @@ export function RemoveButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="grid size-6 place-items-center rounded-[4px] text-silk-2 outline-none hover:bg-white/6 hover:text-[#ff9a80] focus-visible:ring-2 focus-visible:ring-phosphor/70"
+      className="grid size-6 place-items-center rounded-[4px] text-silk-2 outline-none hover:bg-tint/6 hover:text-error focus-visible:ring-2 focus-visible:ring-phosphor/70"
     >
       <XIcon aria-hidden className="size-3.5" />
     </button>
@@ -88,8 +88,8 @@ export function Location({
 }: ReturnType<typeof describeAddress>) {
   return (
     <span className="flex items-baseline gap-2 whitespace-nowrap">
-      <span className="font-mono text-[#f2ebdd]">{address}</span>
-      {label && <span className="text-white">{label}</span>}
+      <span className="font-mono text-silk-hi">{address}</span>
+      {label && <span className="text-code-label">{label}</span>}
       {line && <span className="text-silk-2">{line}</span>}
     </span>
   );

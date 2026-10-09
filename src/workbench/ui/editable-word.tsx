@@ -47,7 +47,7 @@ export function EditableWord({
         translate="no"
         className={cn(
           box,
-          "bg-screen shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] outline-none hover:ring-1 hover:ring-edge-2 focus-visible:ring-2 focus-visible:ring-phosphor/70 disabled:hover:ring-0",
+          "bg-screen shadow-[inset_0_1px_2px_var(--well-inset)] outline-none hover:ring-1 hover:ring-edge-2 focus-visible:ring-2 focus-visible:ring-phosphor/70 disabled:hover:ring-0",
           className,
         )}
       >
@@ -76,7 +76,7 @@ export function EditableWord({
         }}
         className={cn(
           box,
-          "bg-[#1b1d18] text-[#f2ebdd] outline-none ring-2 ring-phosphor/70 aria-invalid:ring-lamp",
+          "bg-field text-silk-hi outline-none ring-2 ring-phosphor/70 aria-invalid:ring-lamp",
         )}
       />
       {invalid && (

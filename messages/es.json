@@ -140,5 +140,9 @@
   "status_mode_user": "modo usuario",
   "status_mode_supervisor": "modo supervisor",
   "status_language": "Idioma",
-  "editor_loading": "Cargando el editor…"
+  "editor_loading": "Cargando el editor…",
+  "status_theme": "Tema",
+  "theme_system": "Sistema",
+  "theme_light": "Claro",
+  "theme_dark": "Oscuro"
 }

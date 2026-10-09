@@ -51,7 +51,7 @@ function GoTo({ onGo }: { onGo: (addr: number) => void }) {
           setNotFound(false);
         }}
         translate="no"
-        className="h-6 w-48 rounded-[4px] bg-screen px-2 font-mono text-[11.5px] text-silk shadow-[inset_0_1px_3px_rgba(0,0,0,0.7)] outline-none placeholder:text-silk-3 focus-visible:ring-2 focus-visible:ring-phosphor/70 aria-invalid:ring-2 aria-invalid:ring-lamp"
+        className="h-6 w-48 rounded-[4px] bg-screen px-2 font-mono text-[11.5px] text-silk shadow-[inset_0_1px_3px_var(--well-inset)] outline-none placeholder:text-silk-3 focus-visible:ring-2 focus-visible:ring-phosphor/70 aria-invalid:ring-2 aria-invalid:ring-lamp"
       />
       <span role="status" className="sr-only">
         {notFound ? m.memory_go_to_not_found() : ""}
@@ -72,7 +72,7 @@ function FollowPc({
       type="button"
       aria-pressed={on}
       onClick={() => onChange(!on)}
-      className="flex h-6 items-center gap-1.5 rounded-[4px] border border-edge-2 px-2 text-xs text-silk outline-none hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-phosphor/70"
+      className="flex h-6 items-center gap-1.5 rounded-[4px] border border-edge-2 px-2 text-xs text-silk outline-none hover:bg-tint/5 focus-visible:ring-2 focus-visible:ring-phosphor/70"
     >
       <span
         aria-hidden
@@ -118,9 +118,9 @@ function MemoryRow({
       aria-rowindex={addr + 2}
       className={cn(
         COLUMNS,
-        "absolute inset-x-0 font-mono text-xs text-[#b9c2b0]",
+        "absolute inset-x-0 font-mono text-xs text-code-muted",
         isPc && "bg-phosphor/12 text-phosphor",
-        isTarget && !isPc && "bg-white/6",
+        isTarget && !isPc && "bg-tint/6",
       )}
       style={{ height: ROW_HEIGHT, transform: `translateY(${start}px)` }}
     >
@@ -148,11 +148,14 @@ function MemoryRow({
           />
         </button>
       </span>
-      <span role="rowheader" className={isPc ? "" : "text-[#6c7765]"}>
+      <span role="rowheader" className={isPc ? "" : "text-code-dim"}>
         {name}
         {isPc && <span className="sr-only"> {m.memory_pc_here()}</span>}
       </span>
-      <span role="cell" className="truncate font-sans text-[12.5px] text-white">
+      <span
+        role="cell"
+        className="truncate font-sans text-[12.5px] text-code-label"
+      >
         {label}
       </span>
       <span role="cell">
@@ -164,12 +167,12 @@ function MemoryRow({
           className={cn(
             "h-5 w-16 bg-transparent shadow-none",
             changed &&
-              "text-phosphor [text-shadow:0_0_5px_rgba(255,181,71,0.45)]",
+              "text-phosphor [text-shadow:0_0_5px_var(--phosphor-glow)]",
           )}
         />
         {changed && <span className="sr-only">{m.changed()}</span>}
       </span>
-      <span role="cell" className="text-[#6f7a66]">
+      <span role="cell" className="text-code-dim">
         {opcodeBits(word)}
       </span>
       <span role="cell" className="text-right tabular-nums">

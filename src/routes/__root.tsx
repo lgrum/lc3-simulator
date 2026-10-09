@@ -1,11 +1,14 @@
 import {
   HeadContent,
   Navigate,
+  ScriptOnce,
   Scripts,
   createRootRoute,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
+
+import { themeScript } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -48,9 +51,12 @@ export const Route = createRootRoute({
 // browser-only APIs.
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    // The theme script sets the theme class on <html> before React loads.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* After HeadContent, so the theme-color meta tag exists. */}
+        <ScriptOnce>{themeScript}</ScriptOnce>
       </head>
       <body>
         {children}

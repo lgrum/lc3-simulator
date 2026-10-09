@@ -38,7 +38,7 @@ export function ConsoleView({ clearedAt }: { clearedAt: number }) {
     // the input itself with Tab.
     // oxlint-disable-next-line click-events-have-key-events, no-static-element-interactions
     <div
-      className="relative flex h-full min-h-0 cursor-text flex-col bg-[radial-gradient(ellipse_at_40%_30%,#16130b,#0c0b08)]"
+      className="relative flex h-full min-h-0 cursor-text flex-col bg-[radial-gradient(ellipse_at_40%_30%,var(--console-top),var(--console-bottom))]"
       onClick={() => input.current?.focus()}
     >
       <textarea
@@ -70,7 +70,7 @@ export function ConsoleView({ clearedAt }: { clearedAt: number }) {
           role="log"
           translate="no"
           aria-label={m.console_output_label()}
-          className="font-mono text-[15px] leading-6 whitespace-pre-wrap text-phosphor [text-shadow:0_0_6px_rgba(255,181,71,0.5)]"
+          className="font-mono text-[15px] leading-6 whitespace-pre-wrap text-console-text [text-shadow:0_0_6px_var(--phosphor-glow)]"
         >
           {text}
           <span

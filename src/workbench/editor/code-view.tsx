@@ -1,6 +1,6 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap } from "@codemirror/search";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import {
   EditorView,
@@ -13,6 +13,8 @@ import {
   lineNumbers,
 } from "@codemirror/view";
 import { useCallback } from "react";
+
+import { themeStore } from "@/lib/theme";
 
 import { toggleBreakpointAtLine } from "../actions";
 import type { SourceStore } from "../lib/source-store";
@@ -27,82 +29,98 @@ import {
 import type { SourceKind } from "./machine-markers";
 import { TAB_WIDTH, tabStops } from "./tab-stops";
 
-const theme = EditorView.theme(
-  {
-    "&": {
-      height: "100%",
-      color: "var(--code-text)",
-      backgroundColor: "transparent",
-      fontSize: "13px",
-    },
-    "&.cm-focused": { outline: "none" },
-    ".cm-scroller": {
-      fontFamily: "var(--font-mono)",
-      lineHeight: "22px",
-      paddingBlock: "6px",
-    },
-    ".cm-content": { caretColor: "var(--phosphor)" },
-    ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--phosphor)" },
-    "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground":
-      { backgroundColor: "rgba(159, 211, 255, 0.2)" },
-    ".cm-gutters": {
-      backgroundColor: "transparent",
-      border: "none",
-      color: "#566050",
-    },
-    ".cm-lineNumbers .cm-gutterElement": { padding: "0 12px 0 4px" },
-    ".cm-activeLine": { backgroundColor: "rgba(255, 255, 255, 0.025)" },
-    ".cm-activeLineGutter": {
-      backgroundColor: "transparent",
-      color: "var(--silk)",
-    },
-    ".cm-pc-line": {
-      background:
-        "linear-gradient(90deg, rgba(255, 181, 71, 0.2), rgba(255, 181, 71, 0.05))",
-      boxShadow: "inset 2px 0 var(--phosphor)",
-    },
-    ".cm-breakpoint-gutter": { width: "22px", cursor: "pointer" },
-    ".cm-breakpoint-gutter .cm-gutterElement": {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    ".cm-breakpoint-gutter .cm-gutterElement:hover::after": {
-      content: '""',
-      width: "9px",
-      height: "9px",
-      borderRadius: "50%",
-      background: "var(--lamp-off)",
-    },
-    ".cm-bp": {
-      width: "9px",
-      height: "9px",
-      borderRadius: "50%",
-      background: "var(--lamp)",
-      boxShadow: "0 0 5px var(--lamp)",
-    },
-    ".cm-bp-disabled": {
-      background: "transparent",
-      border: "1.5px solid var(--lamp)",
-      boxShadow: "none",
-    },
-    ".cm-breakpoint-gutter .cm-gutterElement:has(.cm-bp):hover::after": {
-      display: "none",
-    },
-    ".cm-tooltip": {
-      backgroundColor: "var(--popover)",
-      color: "var(--popover-foreground)",
-      border: "1px solid var(--edge-2)",
-      borderRadius: "5px",
-    },
-    ".cm-diagnostic-error": { borderLeftColor: "var(--lamp)" },
-    ".cm-panels": {
-      backgroundColor: "var(--case-2)",
-      color: "var(--silk)",
-    },
+// Colors come from the CSS variables, so they follow the light or dark
+// theme without rebuilding the editor.
+const theme = EditorView.theme({
+  "&": {
+    height: "100%",
+    color: "var(--code-text)",
+    backgroundColor: "transparent",
+    fontSize: "13px",
   },
-  { dark: true },
-);
+  "&.cm-focused": { outline: "none" },
+  ".cm-scroller": {
+    fontFamily: "var(--font-mono)",
+    lineHeight: "22px",
+    paddingBlock: "6px",
+  },
+  ".cm-content": { caretColor: "var(--phosphor)" },
+  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--phosphor)" },
+  "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground":
+    { backgroundColor: "var(--code-selection)" },
+  ".cm-gutters": {
+    backgroundColor: "transparent",
+    border: "none",
+    color: "var(--code-dim)",
+  },
+  ".cm-lineNumbers .cm-gutterElement": { padding: "0 12px 0 4px" },
+  ".cm-activeLine": { backgroundColor: "var(--code-active-line)" },
+  ".cm-activeLineGutter": {
+    backgroundColor: "transparent",
+    color: "var(--silk)",
+  },
+  ".cm-pc-line": {
+    background:
+      "linear-gradient(90deg, var(--pc-line-from), var(--pc-line-to))",
+    boxShadow: "inset 2px 0 var(--phosphor)",
+  },
+  ".cm-breakpoint-gutter": { width: "22px", cursor: "pointer" },
+  ".cm-breakpoint-gutter .cm-gutterElement": {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ".cm-breakpoint-gutter .cm-gutterElement:hover::after": {
+    content: '""',
+    width: "9px",
+    height: "9px",
+    borderRadius: "50%",
+    background: "var(--lamp-off)",
+  },
+  ".cm-bp": {
+    width: "9px",
+    height: "9px",
+    borderRadius: "50%",
+    background: "var(--lamp)",
+    boxShadow: "0 0 5px var(--lamp)",
+  },
+  ".cm-bp-disabled": {
+    background: "transparent",
+    border: "1.5px solid var(--lamp)",
+    boxShadow: "none",
+  },
+  ".cm-breakpoint-gutter .cm-gutterElement:has(.cm-bp):hover::after": {
+    display: "none",
+  },
+  ".cm-tooltip": {
+    backgroundColor: "var(--popover)",
+    color: "var(--popover-foreground)",
+    border: "1px solid var(--edge-2)",
+    borderRadius: "5px",
+  },
+  ".cm-diagnostic-error": { borderLeftColor: "var(--lamp)" },
+  ".cm-panels": {
+    backgroundColor: "var(--case-2)",
+    color: "var(--silk)",
+  },
+});
+
+/** Tells CodeMirror which theme is active, for its own built-in styles. */
+function followTheme(): Extension {
+  const darkness = new Compartment();
+  const isDark = () => themeStore.getState().theme === "dark";
+  return [
+    darkness.of(EditorView.darkTheme.of(isDark())),
+    ViewPlugin.define((view) => ({
+      destroy: themeStore.subscribe(() => {
+        if (view.state.facet(EditorView.darkTheme) !== isDark())
+          view.dispatch({
+            effects: darkness.reconfigure(EditorView.darkTheme.of(isDark())),
+          });
+      }),
+    })),
+  ];
+}
 
 /** Keeps the editor and the shared buffer in step, in both directions. */
 function sourceSync(store: SourceStore): Extension {
@@ -145,6 +163,7 @@ function extensionsFor(
     asmLanguage(),
     EditorState.tabSize.of(TAB_WIDTH),
     theme,
+    followTheme(),
     EditorView.contentAttributes.of({ "aria-label": label, translate: "no" }),
     trackCursor(workbench, kind),
   ];

@@ -23,7 +23,7 @@ export function Workbench() {
   return (
     <WorkbenchProvider>
       <TooltipProvider delay={400}>
-        <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[48px_minmax(0,1fr)_26px] bg-linear-to-b from-[#2e3033] to-[#26282a] text-[13px] text-silk">
+        <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[48px_minmax(0,1fr)_26px] bg-linear-to-b from-case-top to-case-bottom text-[13px] text-silk">
           <Toolbar />
           {/* Side by side on desktops; stacked and scrolling on tablets. */}
           <main className="relative grid min-h-0 grid-cols-[minmax(0,1fr)_540px] gap-2.5 p-2.5 max-[1100px]:grid-cols-[minmax(0,1fr)] max-[1100px]:grid-rows-[max-content_max-content] max-[1100px]:overflow-y-auto">

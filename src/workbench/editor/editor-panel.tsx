@@ -43,7 +43,7 @@ function AssemblyError() {
   return (
     <p
       role="alert"
-      className="flex-none border-t border-screen-line px-4 py-2 font-mono text-[12.5px] text-[#ff9a80]"
+      className="flex-none border-t border-screen-line px-4 py-2 font-mono text-[12.5px] text-error"
     >
       {line === undefined
         ? error.text
@@ -67,7 +67,7 @@ export function EditorPanel() {
       : (pcSource ?? choice?.tab ?? "program");
 
   return (
-    <Screen className="focus-within:shadow-[inset_0_2px_8px_rgba(0,0,0,0.7),0_0_0_3px_#3a3324]">
+    <Screen className="focus-within:shadow-[inset_0_2px_8px_var(--screen-inset),0_0_0_3px_var(--bezel-focus)]">
       <ScreenTabs
         value={tab}
         onValueChange={(value: SourceKind) => setChoice({ tab: value, pc })}

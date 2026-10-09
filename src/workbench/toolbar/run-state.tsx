@@ -48,7 +48,7 @@ export function describeRunState(
 
 const LED: Record<RunTone, string> = {
   idle: "bg-silk-3",
-  running: "bg-[#a6e3a1] shadow-[0_0_8px_#a6e3a1]",
+  running: "bg-led-run shadow-[0_0_8px_var(--led-run)]",
   paused: "bg-phosphor shadow-[0_0_8px_var(--phosphor)]",
   waiting:
     "bg-phosphor shadow-[0_0_8px_var(--phosphor)] motion-safe:animate-pulse",
@@ -68,8 +68,8 @@ export function RunState() {
       aria-live="polite"
       title={text}
       className={cn(
-        "ml-auto flex h-8 min-w-24 shrink items-center gap-2.5 rounded-[5px] bg-screen px-3 font-mono text-xs font-medium shadow-[inset_0_1px_3px_rgba(0,0,0,0.7)]",
-        tone === "fault" ? "text-[#ff9a80]" : "text-phosphor",
+        "ml-auto flex h-8 min-w-24 shrink items-center gap-2.5 rounded-[5px] bg-screen px-3 font-mono text-xs font-medium shadow-[inset_0_1px_3px_var(--well-inset)]",
+        tone === "fault" ? "text-error" : "text-phosphor",
       )}
     >
       <span

@@ -20,8 +20,8 @@ export function Lamps({ value }: { value: number }) {
                 className={cn(
                   "size-2.5 rounded-full",
                   on
-                    ? "bg-[radial-gradient(circle_at_40%_35%,#ffc0a8,var(--lamp)_55%)] shadow-[0_0_6px_rgba(255,90,54,0.65)]"
-                    : "bg-lamp-off shadow-[inset_0_1px_1px_rgba(0,0,0,0.6)]",
+                    ? "bg-[radial-gradient(circle_at_40%_35%,var(--lamp-hi),var(--lamp)_55%)] shadow-[0_0_6px_var(--lamp-glow)]"
+                    : "bg-lamp-off shadow-[inset_0_1px_1px_var(--well-inset)]",
                 )}
               />
             );
