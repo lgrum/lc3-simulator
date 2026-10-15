@@ -52,7 +52,7 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     // The theme script sets the theme class on <html> before React loads.
-    <html lang="es" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* After HeadContent, so the theme-color meta tag exists. */}

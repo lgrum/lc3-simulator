@@ -267,8 +267,8 @@ const config = defineConfig({
     paraglideVitePlugin({
       project: "./project.inlang",
       outdir: "./src/paraglide",
-      // The SPA has one URL, so the locale lives in localStorage, not the path.
-      strategy: ["baseLocale"],
+      // Prefer the browser language, falling back to English for unsupported locales.
+      strategy: ["preferredLanguage", "baseLocale"],
     }),
     tailwindcss(),
     tanstackStart({

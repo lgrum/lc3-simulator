@@ -16,7 +16,9 @@ vp check        # format, lint, type check
 vp test run
 ```
 
-UI strings live in `messages/es.json` (Paraglide, Spanish).
+UI strings live in `messages/en.json` and `messages/es.json` (Paraglide).
+The interface follows the browser's preferred language when Spanish is available
+and otherwise defaults to English.
 
 ## Build
 
