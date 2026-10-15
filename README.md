@@ -55,3 +55,27 @@ vp run deploy             # build and deploy dist/client/
 
 Deployment uses the Cloudflare account that owns `lgrum.xyz`. If the login has
 access to multiple accounts, set `CLOUDFLARE_ACCOUNT_ID` to select that account.
+
+### Group submissions
+
+The `/entregas` page accepts one `.asm` file for groups
+`1, 3, 4, 5, 6, 7, 9, 10, 11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 27, 30`.
+The Cloudflare Worker checks each group's password and saves the file in the
+`lc3-group-submissions` R2 bucket as `grupo<number>.asm`. A later upload by the
+same group replaces its previous file. Files must be no larger than 1 MiB.
+
+Create the bucket once, then set the `GROUP_PASSWORDS` Worker secret to a JSON
+object whose keys are the group numbers above and values are their passwords.
+The secret must include all 21 groups:
+
+```bash
+pnpm exec wrangler r2 bucket create lc3-group-submissions
+pnpm exec wrangler secret put GROUP_PASSWORDS
+```
+
+When prompted for the secret value, paste the JSON password map. Do not put
+passwords in frontend code, `.env` files committed to the repository, or
+`wrangler.jsonc`. Deploy with `vp run deploy` after configuring the bucket and
+secret. For local end-to-end testing, build the app and run
+`pnpm exec wrangler dev`; `vp dev` alone serves the SPA without the Worker API
+or R2.

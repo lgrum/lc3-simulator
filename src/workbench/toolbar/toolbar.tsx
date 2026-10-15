@@ -1,6 +1,8 @@
-import { BinaryIcon } from "lucide-react";
+import { BinaryIcon, UploadIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { m } from "@/paraglide/messages";
+import { Button } from "@/components/ui/button";
 
 import { HintedKey, Shortcut } from "../ui/key";
 import { useWorkbench } from "../workbench-provider";
@@ -36,6 +38,11 @@ export function Toolbar() {
       <Separator />
       <RunControls />
       <RunState />
+      <Separator />
+      <Button render={<Link to="/entregas" />} size="sm" variant="outline">
+        <UploadIcon aria-hidden />
+        {m.upload_nav()}
+      </Button>
     </header>
   );
 }

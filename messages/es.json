@@ -149,5 +149,22 @@
   "number_format": "Formato numérico",
   "number_format_label": "Punto fijo: bits fraccionarios",
   "number_format_integer": "{q} · entero",
-  "column_fixed": "Valor {q}"
+  "column_fixed": "Valor {q}",
+  "upload_nav": "Entregas",
+  "upload_title": "Entrega de archivos",
+  "upload_description": "Elegí el grupo e ingresá su contraseña para subir el archivo fuente de LC-3.",
+  "upload_group_label": "Grupo",
+  "upload_password_label": "Contraseña del grupo",
+  "upload_file_label": "Archivo .asm",
+  "upload_file_hint": "Máximo 1 MB. Se guardará con el nombre grupo(numero).asm.",
+  "upload_submit": "Subir archivo",
+  "upload_return": "Volver al simulador",
+  "upload_success": "Se subió correctamente como {filename}.",
+  "upload_overwrite": "Si el grupo vuelve a subir un archivo, se reemplazará la entrega anterior.",
+  "upload_error_group": "Seleccioná uno de los grupos habilitados.",
+  "upload_error_password": "La contraseña no corresponde a ese grupo.",
+  "upload_error_file": "Seleccioná un archivo con extensión .asm.",
+  "upload_error_size": "El archivo supera el límite de 1 MB.",
+  "upload_error_unavailable": "La recepción de entregas no está configurada. Contactá a quien administra el simulador.",
+  "upload_error_generic": "No se pudo subir el archivo. Revisá tu conexión e intentá de nuevo."
 }

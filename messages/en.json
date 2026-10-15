@@ -149,5 +149,22 @@
   "number_format": "Number format",
   "number_format_label": "Fixed point: fraction bits",
   "number_format_integer": "{q} · integer",
-  "column_fixed": "{q} value"
+  "column_fixed": "{q} value",
+  "upload_nav": "Submissions",
+  "upload_title": "Submit an assembly file",
+  "upload_description": "Choose your group and enter its password to upload the LC-3 source file.",
+  "upload_group_label": "Group",
+  "upload_password_label": "Group password",
+  "upload_file_label": ".asm file",
+  "upload_file_hint": "Maximum 1 MB. It will be saved as grupo(number).asm.",
+  "upload_submit": "Upload file",
+  "upload_return": "Back to simulator",
+  "upload_success": "Uploaded successfully as {filename}.",
+  "upload_overwrite": "If a group uploads another file, it replaces the previous submission.",
+  "upload_error_group": "Choose one of the available groups.",
+  "upload_error_password": "The password does not match that group.",
+  "upload_error_file": "Choose a file with the .asm extension.",
+  "upload_error_size": "The file exceeds the 1 MB limit.",
+  "upload_error_unavailable": "Submissions are not configured. Contact the simulator administrator.",
+  "upload_error_generic": "The file could not be uploaded. Check your connection and try again."
 }
