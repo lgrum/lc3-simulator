@@ -29,7 +29,7 @@ describe("describeStep", () => {
       30,
     );
     expect(
-      steps.some((step) => describeStep(step).includes('printed "A"')),
+      steps.some((step) => describeStep(step).includes('imprimió "A"')),
     ).toBe(true);
   });
 });

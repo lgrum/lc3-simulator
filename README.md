@@ -16,7 +16,7 @@ vp check        # format, lint, type check
 vp test run
 ```
 
-UI strings live in `messages/{en,es}.json` (Paraglide, English and Spanish).
+UI strings live in `messages/es.json` (Paraglide, Spanish).
 
 ## Build
 
@@ -58,24 +58,49 @@ access to multiple accounts, set `CLOUDFLARE_ACCOUNT_ID` to select that account.
 
 ### Group submissions
 
-The `/entregas` page accepts one `.asm` file for groups
+The `/entregas` page authenticates groups
 `1, 3, 4, 5, 6, 7, 9, 10, 11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 27, 30`.
-The Cloudflare Worker checks each group's password and saves the file in the
-`lc3-group-submissions` R2 bucket as `grupo<number>.asm`. A later upload by the
-same group replaces its previous file. Files must be no larger than 1 MiB.
+The Worker stores password hashes, account state, login limits, and expiring
+sessions in D1. Submitted `.asm` files remain in the `lc3-group-submissions`
+R2 bucket as `grupo<number>.asm`; a later upload by the same group replaces
+its previous file. Files must be no larger than 1 MiB. Signed-in groups can
+download only their own submission; the Worker derives the storage key from
+the authenticated session and does not accept a group ID for this operation.
+Groups can also change their password after signing in by confirming the
+current password and entering a new password of 12–128 characters. A password
+change revokes all sessions for that group, so the group must sign in again.
 
-Create the bucket once, then set the `GROUP_PASSWORDS` Worker secret to a JSON
-object whose keys are the group numbers above and values are their passwords.
-The secret must include all 21 groups:
+The `/admin` panel requires the administrator password and allows teachers to
+inspect all group accounts, generate or regenerate individual group passwords,
+disable accounts without deleting their files, and download submitted work.
+Generated group passwords are shown only in the response that creates them.
+They are salted PBKDF2-SHA256 hashes (600,000 iterations) in D1 and cannot be
+retrieved later.
+
+Create the R2 bucket and D1 database once. Replace the `database_id` placeholder
+in `wrangler.jsonc` with the ID returned by Wrangler, then apply the schema and
+store the initial administrator credential as a Worker secret:
 
 ```bash
 pnpm exec wrangler r2 bucket create lc3-group-submissions
-pnpm exec wrangler secret put GROUP_PASSWORDS
+pnpm exec wrangler d1 create lc3-group-accounts
+pnpm exec wrangler d1 migrations apply lc3-group-accounts --remote
+pnpm exec wrangler secret put ADMIN_PASSWORD
 ```
 
-When prompted for the secret value, paste the JSON password map. Do not put
-passwords in frontend code, `.env` files committed to the repository, or
-`wrangler.jsonc`. Deploy with `vp run deploy` after configuring the bucket and
-secret. For local end-to-end testing, build the app and run
-`pnpm exec wrangler dev`; `vp dev` alone serves the SPA without the Worker API
-or R2.
+Use a unique, high-entropy administrator password and keep it in a password
+manager. Never put it, group passwords, or other credentials in frontend code,
+`.env` files committed to the repository, or `wrangler.jsonc`. The database
+migration pre-creates all 21 active group accounts with no password; sign in
+at `/admin`, select each group, and generate its initial password. Copy and
+deliver each password to that group at generation time. Regenerating a
+password immediately invalidates the previous password and active sessions
+for that group. Sessions expire after eight hours; failed sign-ins are limited
+per client address.
+
+Deploy with `vp run deploy` after configuring the bucket, database, migration,
+and secret. For local Worker testing, build the app, run
+`pnpm exec wrangler d1 migrations apply lc3-group-accounts --local`, create a
+local-only `.dev.vars` file containing `ADMIN_PASSWORD` with a strong test
+password, and run `pnpm exec wrangler dev`. The `.dev.vars` file is ignored by
+Git. `vp dev` alone serves the SPA without the Worker API, D1, or R2.

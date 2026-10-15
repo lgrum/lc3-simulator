@@ -15,5 +15,13 @@
       "bucket_name": "lc3-group-submissions",
     },
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lc3-group-accounts",
+      "database_id": "SET_AFTER_CREATING_THE_D1_DATABASE",
+      "migrations_dir": "migrations",
+    },
+  ],
   "routes": [{ "pattern": "lc3.lgrum.xyz", "custom_domain": true }],
 }
