@@ -5,14 +5,13 @@ The engine follows the Patt/Patel third-edition LC-3 ISA. TRAP saves PC and PSR 
 ## Use
 
 ```ts
-import { assemble } from "../assembler/assembler";
-import { tokenize } from "../assembler/lexer";
-import { parse } from "../assembler/parser";
+import { assembleSource } from "../assembler/assemble-source";
 import { createMachineController } from "./controller";
 
 const machine = createMachineController();
 machine.onOutput((text) => console.log(text));
-machine.load(assemble(parse(tokenize(source))));
+const result = assembleSource(source, "main.asm");
+if (result.ok) machine.load(result.image);
 machine.run();
 ```
 
@@ -22,7 +21,9 @@ The controller is the public engine API. It has no React dependency. Constructio
 
 The assembler returns `{ origin, words, symbols, sourceMap }`. Words exclude the origin. Each emitted word maps to its instruction or directive line, including block words and string terminators. A program has one .ORIG block; a second block raises an error. Addresses can wrap at xFFFF.
 
-Disassembled words pair `sourceLine` with `source: "program" | "os"`. Use both fields when following the PC. OS lines belong to `os/lc3os.asm`, not the user's file. Words without a source mapping have neither field. Loading a program over an OS word removes that word's OS mapping and OS labels, by address and by name. Program labels win name collisions.
+`load()` takes a linked image: `{ entry, segments, symbols, sourceMap, map }`. Every segment `{ origin, words, file }` is written to memory and the PC starts at `entry`. `programImage(program, file)` in `../assembler/linked-image` wraps a single assembled program as a one-segment image, and `assembleSource` returns that image as `image`.
+
+Disassembled words pair `line` with `file`, a project path such as `main.asm`. Use both fields when following the PC. OS lines belong to the read-only file `lc3os.asm` (`OS_FILE` in `os/load`). Words without a source mapping have neither field. Loading a program over an OS word removes that word's OS mapping and OS labels, by address and by name. Program labels win name collisions.
 
 ## ISA and state
 

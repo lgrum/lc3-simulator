@@ -3,6 +3,7 @@ import { useId } from "react";
 import type { ComponentProps, ReactNode } from "react";
 
 import type { MachineController } from "@/lib/simulator/controller";
+import { OS_FILE } from "@/lib/simulator/os/load";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
@@ -71,11 +72,11 @@ export function RemoveButton({
 
 /** "x3004 · LOOP · line 7": where an address is, in terms students know. */
 export function describeAddress(machine: MachineController, addr: number) {
-  const { label, source, sourceLine } = machine.disassemble(addr);
+  const { label, file, line: sourceLine } = machine.disassemble(addr);
   const line =
     sourceLine === undefined
       ? undefined
-      : source === "os"
+      : file === OS_FILE
         ? m.location_os_line({ line: sourceLine })
         : m.location_line({ line: sourceLine });
   return { address: hex(addr), label, line };

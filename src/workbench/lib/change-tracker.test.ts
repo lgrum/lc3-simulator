@@ -11,7 +11,7 @@ function setup() {
     ".ORIG x3000\nADD R0, R0, #5\nST R0, SLOT\nHALT\nSLOT .FILL #0\n.END",
   );
   if (!result.ok) throw result.error;
-  machine.load(result.program);
+  machine.load(result.image);
   const tracker = new ChangeTracker(machine);
   return { machine, tracker };
 }

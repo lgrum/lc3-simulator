@@ -9,7 +9,7 @@ function stepsOf(source: string, count: number) {
   const result = assembleSource(source);
   if (!result.ok) throw result.error;
   const machine = createMachineController();
-  machine.load(result.program);
+  machine.load(result.image);
   return Array.from({ length: count }, () => machine.stepInto());
 }
 

@@ -1,17 +1,18 @@
 import { assembleSource } from "@/lib/assembler/assemble-source";
 import type { AssemblyError } from "@/lib/assembler/assemble-source";
-import type { AssemblyResult } from "@/lib/assembler/types";
+import type { LinkedImage } from "@/lib/assembler/types";
 import type { MachineController } from "@/lib/simulator/controller";
 
 import type { ChangeTracker } from "./change-tracker";
-import { createLineMap } from "./line-map";
+import { createLineMaps } from "./line-map";
 import type { LineMap } from "./line-map";
 import type { SourceFile, SourceStore } from "./source-store";
 
 export type Assembly = {
-  /** The program loaded into the machine, from the last successful assemble. */
-  program: AssemblyResult | null;
-  lines: LineMap | null;
+  /** The image loaded into the machine, from the last successful assemble. */
+  image: LinkedImage | null;
+  /** One line map per file of the loaded image. */
+  lines: ReadonlyMap<string, LineMap>;
   /** The error from the last assemble, if it failed. */
   error: AssemblyError | null;
   /** The editor text that was last assembled, to tell when it is stale. */
@@ -19,8 +20,8 @@ export type Assembly = {
 };
 
 const INITIAL: Assembly = {
-  program: null,
-  lines: null,
+  image: null,
+  lines: new Map(),
   error: null,
   assembledText: null,
 };
@@ -53,20 +54,20 @@ export class AssemblyStore {
 
   /** Assembles the editor buffer and loads it. Returns whether it worked. */
   assemble(): boolean {
-    const text = this.source.getFile().text;
-    const result = assembleSource(text);
+    const { name, text } = this.source.getFile();
+    const result = assembleSource(text, name);
     if (!result.ok) {
       this.publish({ ...this.state, error: result.error, assembledText: text });
       return false;
     }
     // Publish first, so machine subscribers see the new line map on load.
     this.publish({
-      program: result.program,
-      lines: createLineMap(result.program),
+      image: result.image,
+      lines: createLineMaps(result.image),
       error: null,
       assembledText: text,
     });
-    this.machine.load(result.program);
+    this.machine.load(result.image);
     this.changes.rebase();
     return true;
   }

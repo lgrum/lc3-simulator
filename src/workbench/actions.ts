@@ -1,6 +1,5 @@
 import type { MachineSnapshot } from "@/lib/simulator/controller";
 
-import type { SourceKind } from "./editor/machine-markers";
 import { toggleBreakpoint } from "./lib/breakpoints";
 import { addressAtOrAfter } from "./lib/line-map";
 import type { LineMap } from "./lib/line-map";
@@ -13,26 +12,24 @@ export function isStale({ assembly, source }: Workbench): boolean {
 /** Assembles first if the buffer changed. Returns whether a program is loaded. */
 export function ensureAssembled(workbench: Workbench): boolean {
   if (isStale(workbench)) return workbench.assembly.assemble();
-  return workbench.assembly.getState().program !== null;
+  return workbench.assembly.getState().image !== null;
 }
 
-export function linesOf(
-  workbench: Workbench,
-  kind: SourceKind,
-): LineMap | null {
-  return kind === "os"
+/** The line map of a project file or the OS, if it was loaded. */
+export function linesOf(workbench: Workbench, file: string): LineMap | null {
+  return file === workbench.os.file
     ? workbench.os.lines
-    : workbench.assembly.getState().lines;
+    : (workbench.assembly.getState().lines.get(file) ?? null);
 }
 
 /** Toggles a breakpoint on the statement at or after `line`. */
 export function toggleBreakpointAtLine(
   workbench: Workbench,
-  kind: SourceKind,
+  file: string,
   line: number,
 ): void {
-  if (kind === "program" && !ensureAssembled(workbench)) return;
-  const lines = linesOf(workbench, kind);
+  if (file !== workbench.os.file && !ensureAssembled(workbench)) return;
+  const lines = linesOf(workbench, file);
   const addr = lines && addressAtOrAfter(lines, line);
   if (addr !== null && addr !== undefined)
     toggleBreakpoint(workbench.machine, addr);
@@ -41,9 +38,9 @@ export function toggleBreakpointAtLine(
 /** Runs until the statement under the cursor of the last focused editor. */
 export function runToCursor(workbench: Workbench): void {
   if (!availableControls(workbench.machine.getSnapshot()).runToCursor) return;
-  const { kind, line } = workbench.cursor;
-  if (kind === "program" && !ensureAssembled(workbench)) return;
-  const lines = linesOf(workbench, kind);
+  const { file, line } = workbench.cursor;
+  if (file !== workbench.os.file && !ensureAssembled(workbench)) return;
+  const lines = linesOf(workbench, file);
   const addr = lines && addressAtOrAfter(lines, line);
   if (addr !== null && addr !== undefined) workbench.machine.runTo(addr);
 }

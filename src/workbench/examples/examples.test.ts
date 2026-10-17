@@ -9,7 +9,7 @@ function runToHalt(source: string, input = "") {
   const result = assembleSource(source);
   if (!result.ok) throw result.error;
   const machine = createMachineController();
-  machine.load(result.program);
+  machine.load(result.image);
   machine.input(input);
   for (let i = 0; i < 100_000 && machine.getSnapshot().mcr & 0x8000; i++)
     machine.stepInto();

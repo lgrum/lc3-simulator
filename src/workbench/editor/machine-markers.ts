@@ -17,8 +17,6 @@ import type { MachineController } from "@/lib/simulator/controller";
 import { tracksPc } from "../actions";
 import type { LineMap } from "../lib/line-map";
 
-export type SourceKind = "program" | "os";
-
 type Markers = {
   pcLine: number | null;
   breakpoints: ReadonlyArray<{ line: number; enabled: boolean }>;
@@ -26,8 +24,9 @@ type Markers = {
 
 type MarkerOptions = {
   machine: MachineController;
-  kind: SourceKind;
-  /** The current line map for this source, or null before it assembles. */
+  /** The project file (or the OS file) this editor shows. */
+  file: string;
+  /** The current line map for this file, or null while it isn't loaded. */
   lines: () => LineMap | null;
   /** Subscribes to changes of the line map, e.g. a new assembly. */
   subscribeLines?: (listener: () => void) => () => void;
@@ -97,14 +96,13 @@ function sameMarkers(a: Markers, b: Markers): boolean {
   );
 }
 
-function readMarkers({ machine, kind, lines }: MarkerOptions): Markers {
+function readMarkers({ machine, file, lines }: MarkerOptions): Markers {
   const map = lines();
   const snapshot = machine.getSnapshot();
   let pcLine: number | null = null;
   if (tracksPc(snapshot)) {
     const word = machine.disassemble(snapshot.pc);
-    if (word.source === kind && word.sourceLine !== undefined)
-      pcLine = word.sourceLine;
+    if (word.file === file && word.line !== undefined) pcLine = word.line;
   }
   const breakpoints = map
     ? machine.breakpoints

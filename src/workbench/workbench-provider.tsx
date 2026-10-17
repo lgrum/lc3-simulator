@@ -6,15 +6,14 @@ import type {
   MachineController,
   MachineSnapshot,
 } from "@/lib/simulator/controller";
-import { assembleOs } from "@/lib/simulator/os/load";
+import { OS_FILE, assembleOs } from "@/lib/simulator/os/load";
 import osSource from "@/lib/simulator/os/lc3os.asm?raw";
 
-import type { SourceKind } from "./editor/machine-markers";
 import { EXAMPLES } from "./examples";
 import { AssemblyStore } from "./lib/assembly-store";
 import type { Assembly } from "./lib/assembly-store";
 import { ChangeTracker } from "./lib/change-tracker";
-import { createLineMap } from "./lib/line-map";
+import { createLineMaps } from "./lib/line-map";
 import type { LineMap } from "./lib/line-map";
 import { SourceStore } from "./lib/source-store";
 import type { SourceFile } from "./lib/source-store";
@@ -27,9 +26,10 @@ export type Workbench = {
   assembly: AssemblyStore;
   subscribe: (callback: () => void) => () => void;
   getSnapshot: () => MachineSnapshot;
-  os: { fileName: string; source: string; lines: LineMap };
+  /** The read-only OS file. */
+  os: { file: string; source: string; lines: LineMap };
   /** Where the cursor was in the last focused editor, for run to cursor. */
-  cursor: { kind: SourceKind; line: number };
+  cursor: { file: string; line: number };
 };
 
 const WorkbenchContext = createContext<Workbench | null>(null);
@@ -52,11 +52,14 @@ function createWorkbench(): Workbench {
     subscribe: machine.subscribe.bind(machine),
     getSnapshot: machine.getSnapshot.bind(machine),
     os: {
-      fileName: "lc3os.asm",
+      file: OS_FILE,
       source: osSource,
-      lines: createLineMap(assembleOs()),
+      lines: createLineMaps(assembleOs()).get(OS_FILE) ?? {
+        addressOf: new Map(),
+        lineOf: new Map(),
+      },
     },
-    cursor: { kind: "program", line: 1 },
+    cursor: { file: source.getFile().name, line: 1 },
   };
 }
 

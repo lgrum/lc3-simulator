@@ -1,10 +1,23 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { assemble } from "../assembler/assembler";
 import { tokenize } from "../assembler/lexer";
+import { programImage } from "../assembler/linked-image";
 import { parse } from "../assembler/parser";
+import type { LinkedImage } from "../assembler/types";
 import { MachineController } from "./controller";
 import type { ControllerOptions, Scheduler } from "./controller";
 import { LC3 } from "./isa/lc3";
+
+/** An image with one segment and no symbols or source lines. */
+function rawImage(origin: number, words: Array<number>): LinkedImage {
+  return {
+    entry: origin,
+    segments: [{ origin, words, file: "main.asm" }],
+    symbols: new Map(),
+    sourceMap: new Map(),
+    map: [],
+  };
+}
 
 function fixture(source: string, options: ControllerOptions = {}) {
   let time = 0;
@@ -22,7 +35,10 @@ function fixture(source: string, options: ControllerOptions = {}) {
   };
   const machine = new MachineController({ ...options, scheduler });
   machine.load(
-    assemble(parse(tokenize(".ORIG x3000\n" + source + "\n.END\n"))),
+    programImage(
+      assemble(parse(tokenize(".ORIG x3000\n" + source + "\n.END\n"))),
+      "main.asm",
+    ),
   );
   const tick = () => {
     const index = jobs.findIndex((job) => job.active);
@@ -172,31 +188,63 @@ describe("review regressions", () => {
     const { machine } = fixture("HALT");
     const os = machine.disassemble(0x25);
     const program = machine.disassemble(0x3000);
-    expect(os).toMatchObject({ source: "os", sourceLine: expect.any(Number) });
-    expect(program).toMatchObject({ source: "program", sourceLine: 2 });
-    expect(machine.disassemble(0x4000).sourceLine).toBeUndefined();
+    expect(os).toMatchObject({ file: "lc3os.asm", line: expect.any(Number) });
+    expect(program).toMatchObject({ file: "main.asm", line: 2 });
+    expect(machine.disassemble(0x4000).line).toBeUndefined();
     machine.stepInto();
     expect(machine.disassemble(machine.getSnapshot().pc)).toMatchObject({
-      source: "os",
-      sourceLine: expect.any(Number),
+      file: "lc3os.asm",
+      line: expect.any(Number),
     });
+  });
+  it("loads every segment, starts at the entry and maps words to their file", () => {
+    const { machine } = fixture("HALT");
+    machine.load({
+      entry: 0x4000,
+      segments: [
+        { origin: 0x4000, words: [0x1021, 0xf025], file: "main.asm" },
+        { origin: 0x4002, words: [0xc1c0], file: "lib/trig.asm" },
+      ],
+      symbols: new Map([
+        ["START", 0x4000],
+        ["TRIG-SIN", 0x4002],
+      ]),
+      sourceMap: new Map([
+        [0x4000, { file: "main.asm", line: 2 }],
+        [0x4001, { file: "main.asm", line: 3 }],
+        [0x4002, { file: "lib/trig.asm", line: 5 }],
+      ]),
+      map: [],
+    });
+    expect(machine.getSnapshot().pc).toBe(0x4000);
+    expect(Array.from(machine.readMemory(0x4000, 3))).toEqual([
+      0x1021, 0xf025, 0xc1c0,
+    ]);
+    expect(machine.disassemble(0x4001)).toMatchObject({
+      file: "main.asm",
+      line: 3,
+    });
+    expect(machine.disassemble(0x4002)).toMatchObject({
+      file: "lib/trig.asm",
+      line: 5,
+      label: "TRIG-SIN",
+    });
+    expect(machine.lookupSymbol("trig-sin")).toBe(0x4002);
+    machine.writeMemory(0x4002, 0);
+    machine.reset();
+    expect(machine.readMemory(0x4002, 1)[0]).toBe(0xc1c0);
   });
   it("removes OS source lines from words overwritten by a user image", () => {
     const { machine } = fixture("HALT");
-    const image = {
-      origin: 0x25,
-      words: [0x1021],
-      symbols: new Map<string, number>(),
-      sourceMap: new Map<number, number>(),
-    };
+    const image = rawImage(0x25, [0x1021]);
     machine.load(image);
-    expect(machine.disassemble(0x25).sourceLine).toBeUndefined();
-    expect(machine.disassemble(0x25).source).toBeUndefined();
-    image.sourceMap.set(0x25, 99);
+    expect(machine.disassemble(0x25).line).toBeUndefined();
+    expect(machine.disassemble(0x25).file).toBeUndefined();
+    image.sourceMap.set(0x25, { file: "main.asm", line: 99 });
     machine.load(image);
     expect(machine.disassemble(0x25)).toMatchObject({
-      source: "program",
-      sourceLine: 99,
+      file: "main.asm",
+      line: 99,
     });
   });
   it("clears the empty-read pulse and restores polling detection after undo", () => {
@@ -282,12 +330,7 @@ describe("review regressions", () => {
   it("removes OS labels from words overwritten by a user image", () => {
     const { machine } = fixture("HALT");
     const addr = machine.lookupSymbol("OS_GETC") as number;
-    const image = {
-      origin: addr,
-      words: [0x1021],
-      symbols: new Map<string, number>(),
-      sourceMap: new Map<number, number>(),
-    };
+    const image = rawImage(addr, [0x1021]);
     machine.load(image);
     expect(machine.disassemble(addr).label).toBeUndefined();
     expect(machine.lookupSymbol(addr)).toBeUndefined();
@@ -422,7 +465,12 @@ describe("controller, devices and real OS", () => {
         },
       },
     });
-    machine.load(assemble(parse(tokenize(".ORIG x3000\nBR #-1\n.END\n"))));
+    machine.load(
+      programImage(
+        assemble(parse(tokenize(".ORIG x3000\nBR #-1\n.END\n"))),
+        "main.asm",
+      ),
+    );
     let notifications = 0;
     machine.subscribe(() => notifications++);
     machine.run();
@@ -514,7 +562,7 @@ describe("controller, devices and real OS", () => {
     expect(view.buffer.byteLength).toBe(0x20000);
     expect(machine.disassemble(0x3000)).toMatchObject({
       label: "START",
-      sourceLine: 2,
+      line: 2,
       text: "ADD R2, R2, #1",
     });
     expect(machine.lookupSymbol("start")).toBe(0x3000);

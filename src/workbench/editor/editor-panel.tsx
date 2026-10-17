@@ -18,7 +18,6 @@ import {
   useSourceFile,
   useWorkbench,
 } from "../workbench-provider";
-import type { SourceKind } from "./machine-markers";
 
 // CodeMirror is the largest dependency; loading it separately lets the rest
 // of the workbench appear while it downloads.
@@ -27,11 +26,11 @@ const CodeView = lazy(() =>
 );
 
 /** The file the PC is in; undefined while running too fast to follow. */
-function usePcSource(): SourceKind | undefined {
+function usePcFile(): string | undefined {
   return useMachineRead((machine) => {
     const snapshot = machine.getSnapshot();
     return tracksPc(snapshot)
-      ? machine.disassemble(snapshot.pc).source
+      ? machine.disassemble(snapshot.pc).file
       : undefined;
   });
 }
@@ -57,24 +56,28 @@ export function EditorPanel() {
   const file = useSourceFile();
   const stale = useIsStale();
   const { pc } = useSnapshot();
-  const pcSource = usePcSource();
+  const openFiles = [file.name, os.file];
+  const pcFile = usePcFile();
+  const pcTab =
+    pcFile !== undefined && openFiles.includes(pcFile) ? pcFile : undefined;
   // A tab the user picked stays open until the PC moves; then the editor
   // follows the PC, e.g. into the OS during a TRAP.
-  const [choice, setChoice] = useState<{ tab: SourceKind; pc: number }>();
+  const [choice, setChoice] = useState<{ tab: string; pc: number }>();
+  const chosen = choice && openFiles.includes(choice.tab) ? choice : undefined;
   const tab =
-    choice && (choice.pc === pc || pcSource === undefined)
-      ? choice.tab
-      : (pcSource ?? choice?.tab ?? "program");
+    chosen && (chosen.pc === pc || pcTab === undefined)
+      ? chosen.tab
+      : (pcTab ?? chosen?.tab ?? file.name);
 
   return (
     <Screen className="focus-within:shadow-[inset_0_2px_8px_var(--screen-inset),0_0_0_3px_var(--bezel-focus)]">
       <ScreenTabs
         value={tab}
-        onValueChange={(value: SourceKind) => setChoice({ tab: value, pc })}
+        onValueChange={(value: string) => setChoice({ tab: value, pc })}
         className="flex min-h-0 flex-1 flex-col"
       >
         <ScreenTabList>
-          <ScreenTab value="program">
+          <ScreenTab value={file.name}>
             {file.name}
             {stale && (
               <span
@@ -85,8 +88,8 @@ export function EditorPanel() {
               </span>
             )}
           </ScreenTab>
-          <ScreenTab value="os">
-            {os.fileName}
+          <ScreenTab value={os.file}>
+            {os.file}
             <span className="font-mono text-[10.5px] text-silk-2">
               {m.editor_read_only()}
             </span>
@@ -97,11 +100,11 @@ export function EditorPanel() {
             <p className="p-4 text-xs text-silk-2">{m.editor_loading()}</p>
           }
         >
-          <ScreenTabPanel value="program" keepMounted>
-            <CodeView kind="program" label={m.editor_program_label()} />
+          <ScreenTabPanel value={file.name} keepMounted>
+            <CodeView file={file.name} label={m.editor_program_label()} />
           </ScreenTabPanel>
-          <ScreenTabPanel value="os" keepMounted>
-            <CodeView kind="os" label={m.editor_os_label()} />
+          <ScreenTabPanel value={os.file} keepMounted>
+            <CodeView file={os.file} label={m.editor_os_label()} />
           </ScreenTabPanel>
         </Suspense>
       </ScreenTabs>

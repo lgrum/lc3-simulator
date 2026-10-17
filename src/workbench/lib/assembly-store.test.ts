@@ -28,11 +28,11 @@ describe("AssemblyStore", () => {
   it("keeps the loaded program when the new text fails to assemble", () => {
     const { source, store } = setup(".ORIG x3000\nHALT\n.END");
     store.assemble();
-    const program = store.getState().program;
+    const image = store.getState().image;
 
     source.setText(".ORIG x3000\nBR NOWHERE\n.END");
     expect(store.assemble()).toBe(false);
-    expect(store.getState().program).toBe(program);
+    expect(store.getState().image).toBe(image);
     expect(store.getState().error?.position).toEqual({ line: 2 });
     expect(store.getState().assembledText).toBe(source.getFile().text);
   });

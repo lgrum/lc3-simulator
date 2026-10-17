@@ -26,7 +26,6 @@ import {
   cursorLine,
   machineMarkers,
 } from "./machine-markers";
-import type { SourceKind } from "./machine-markers";
 import { TAB_WIDTH, tabStops } from "./tab-stops";
 
 // Colors come from the CSS variables, so they follow the light or dark
@@ -141,16 +140,16 @@ function sourceSync(store: SourceStore): Extension {
   ];
 }
 
-function trackCursor(workbench: Workbench, kind: SourceKind): Extension {
+function trackCursor(workbench: Workbench, file: string): Extension {
   return EditorView.updateListener.of((update) => {
     if (update.selectionSet || (update.focusChanged && update.view.hasFocus))
-      workbench.cursor = { kind, line: cursorLine(update.state) };
+      workbench.cursor = { file, line: cursorLine(update.state) };
   });
 }
 
 function extensionsFor(
   workbench: Workbench,
-  kind: SourceKind,
+  file: string,
   label: string,
 ): Extension {
   const { assembly, machine } = workbench;
@@ -165,16 +164,16 @@ function extensionsFor(
     theme,
     followTheme(),
     EditorView.contentAttributes.of({ "aria-label": label, translate: "no" }),
-    trackCursor(workbench, kind),
+    trackCursor(workbench, file),
   ];
-  if (kind === "os")
+  if (file === workbench.os.file)
     return [
       // First, so the breakpoint gutter sits left of the line numbers.
       machineMarkers({
         machine,
-        kind,
+        file,
         lines: () => workbench.os.lines,
-        onToggleLine: (line) => toggleBreakpointAtLine(workbench, kind, line),
+        onToggleLine: (line) => toggleBreakpointAtLine(workbench, file, line),
       }),
       ...common,
       EditorState.readOnly.of(true),
@@ -183,10 +182,10 @@ function extensionsFor(
   return [
     machineMarkers({
       machine,
-      kind,
-      lines: () => assembly.getState().lines,
+      file,
+      lines: () => assembly.getState().lines.get(file) ?? null,
       subscribeLines: assembly.subscribe,
-      onToggleLine: (line) => toggleBreakpointAtLine(workbench, kind, line),
+      onToggleLine: (line) => toggleBreakpointAtLine(workbench, file, line),
     }),
     ...common,
     history(),
@@ -197,25 +196,27 @@ function extensionsFor(
   ];
 }
 
-/** A CodeMirror editor for the program, or a read-only view of the OS. */
-export function CodeView({ kind, label }: { kind: SourceKind; label: string }) {
+/** A CodeMirror editor for a project file, or a read-only view of the OS. */
+export function CodeView({ file, label }: { file: string; label: string }) {
   const workbench = useWorkbench();
   // Memoized for correctness: a new ref callback would recreate the editor.
   const mount = useCallback(
     (parent: HTMLDivElement | null) => {
       if (!parent) return;
       const doc =
-        kind === "os" ? workbench.os.source : workbench.source.getFile().text;
+        file === workbench.os.file
+          ? workbench.os.source
+          : workbench.source.getFile().text;
       const view = new EditorView({
         parent,
         state: EditorState.create({
           doc,
-          extensions: extensionsFor(workbench, kind, label),
+          extensions: extensionsFor(workbench, file, label),
         }),
       });
       return () => view.destroy();
     },
-    [workbench, kind, label],
+    [workbench, file, label],
   );
   return <div ref={mount} className="h-full min-h-0" />;
 }

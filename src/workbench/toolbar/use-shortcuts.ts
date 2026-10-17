@@ -32,7 +32,7 @@ export const SHORTCUTS: ReadonlyArray<Shortcut> = [
     run: (workbench) =>
       toggleBreakpointAtLine(
         workbench,
-        workbench.cursor.kind,
+        workbench.cursor.file,
         workbench.cursor.line,
       ),
   },

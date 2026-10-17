@@ -1,4 +1,4 @@
-import type { LoadedProgram } from "../assembler/types";
+import type { LinkedImage, SourceLocation } from "../assembler/types";
 import { Bus } from "./bus";
 import { Cpu } from "./cpu";
 import { Debugger } from "./debugger";
@@ -20,7 +20,8 @@ import { assembleOs } from "./os/load";
 import { createMachineState, restoreControl, captureControl } from "./state";
 
 export type {
-  LoadedProgram,
+  LinkedImage,
+  SourceLocation,
   StepEvent,
   Breakpoint,
   BreakpointId,
@@ -50,8 +51,9 @@ export type DisassembledWord = {
   word: number;
   label?: string;
   text: string;
-  source?: "program" | "os";
-  sourceLine?: number;
+  /** The project file and 1-based line that emitted the word, if known. */
+  file?: string;
+  line?: number;
 };
 export type MachineSnapshot = {
   regs: ReadonlyArray<number>;
@@ -83,7 +85,7 @@ export type ControllerOptions = {
   isa?: IsaDefinition;
   strictAccess?: boolean;
   historyLimit?: number;
-  os?: LoadedProgram | false;
+  os?: LinkedImage | false;
   scheduler?: Scheduler;
 };
 
@@ -109,14 +111,11 @@ class Controller {
   private readonly debugger = new Debugger();
   private readonly history: History;
   private readonly scheduler: Scheduler;
-  private readonly os: LoadedProgram | undefined;
-  private image: LoadedProgram | undefined;
+  private readonly os: LinkedImage | undefined;
+  private image: LinkedImage | undefined;
   private symbols = new Map<number, string>();
   private namedSymbols = new Map<string, number>();
-  private readonly sourceMap = new Map<
-    number,
-    { source: "program" | "os"; sourceLine: number }
-  >();
+  private readonly sourceMap = new Map<number, SourceLocation>();
   private readonly subscribers = new Set<() => void>();
   private readonly outputSubscribers = new Set<(chars: string) => void>();
   private status: MachineSnapshot["status"] = "paused";
@@ -171,11 +170,12 @@ class Controller {
       this.state.memory.fill(0);
       for (const image of [this.os, this.image]) {
         if (image)
-          for (let i = 0; i < image.words.length; i++)
-            this.state.memory[(image.origin + i) & 0xffff] = image.words[i];
+          for (const { origin, words } of image.segments)
+            for (let i = 0; i < words.length; i++)
+              this.state.memory[(origin + i) & 0xffff] = words[i];
       }
     }
-    this.cpu.pc = this.image?.origin ?? this.isa.memoryMap.userStart;
+    this.cpu.pc = this.image?.entry ?? this.isa.memoryMap.userStart;
     this.state.savedSSP = this.isa.memoryMap.userStart;
     this.state.savedUSP = this.isa.memoryMap.userEnd;
     if (
@@ -193,16 +193,13 @@ class Controller {
     this.symbols.clear();
     this.namedSymbols.clear();
     this.sourceMap.clear();
-    for (const [source, image] of [
-      ["os", this.os],
-      ["program", this.image],
-    ] as const) {
+    for (const image of [this.os, this.image]) {
       if (!image) continue;
       // An image owns the words it loads, including their labels and source
       // lines, even if it has no entry of its own for a word.
       const owned = new Set<number>();
-      for (let i = 0; i < image.words.length; i++)
-        owned.add((image.origin + i) & 0xffff);
+      for (const { origin, words } of image.segments)
+        for (let i = 0; i < words.length; i++) owned.add((origin + i) & 0xffff);
       for (const addr of owned) {
         this.symbols.delete(addr);
         this.sourceMap.delete(addr);
@@ -213,17 +210,20 @@ class Controller {
         this.symbols.set(addr, name);
         this.namedSymbols.set(name.toUpperCase(), addr);
       }
-      for (const [addr, sourceLine] of image.sourceMap)
-        this.sourceMap.set(addr, { source, sourceLine });
+      for (const [addr, location] of image.sourceMap)
+        this.sourceMap.set(addr, { file: location.file, line: location.line });
     }
     this.changed();
   }
-  load(image: LoadedProgram): void {
+  /** Loads every segment of a linked image and puts the PC at its entry. */
+  load(image: LinkedImage): void {
+    const isWord = (value: number) =>
+      Number.isInteger(value) && value >= 0 && value <= 0xffff;
     if (
-      !Number.isInteger(image.origin) ||
-      image.origin < 0 ||
-      image.origin > 0xffff ||
-      image.words.length > 0x10000
+      !isWord(image.entry) ||
+      image.segments.some(
+        ({ origin, words }) => !isWord(origin) || words.length > 0x10000,
+      )
     )
       throw new RangeError("Invalid program image");
     this.image = structuredClone(image);
