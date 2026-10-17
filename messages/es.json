@@ -162,5 +162,17 @@
   "file_delete_confirm": "¿Eliminar {file}? No se puede deshacer.",
   "file_replace_one_confirm": "¿Reemplazar {file} con el archivo que elegiste?",
   "project_replace_confirm": "¿Reemplazar todos los archivos del proyecto? Tus cambios no están guardados en ningún otro sitio.",
-  "location_file_line": "{file} línea {line}"
+  "location_file_line": "{file} línea {line}",
+  "problems": "Problemas",
+  "problems_empty": "No hay problemas en el último ensamblado.",
+  "problem_whole_program": "Todo el programa",
+  "severity_error": "Error",
+  "severity_warning": "Aviso",
+  "severity_info": "Nota",
+  "link_map": "Mapa de enlace",
+  "link_map_empty": "Ensambla el proyecto para ver dónde va cada archivo en memoria.",
+  "link_map_no_words": "en {start}, sin palabras",
+  "column_file": "Archivo",
+  "column_addresses": "Direcciones",
+  "column_labels": "Etiquetas"
 }

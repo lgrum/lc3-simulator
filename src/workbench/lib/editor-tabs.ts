@@ -21,6 +21,8 @@ export class EditorTabs {
   private state: EditorTabsState;
   private readonly listeners = new Set<() => void>();
   private readonly saved = new Map<string, EditorState>();
+  /** A line to put the cursor on once its file's editor is showing. */
+  private pendingReveal: { file: string; line: number } | null = null;
 
   constructor(
     private readonly project: ProjectStore,
@@ -52,6 +54,20 @@ export class EditorTabs {
         ? this.state.open
         : [...this.state.open, file];
     this.publish({ open, chosen: { file, pc: this.currentPc() } });
+  }
+
+  /** Shows `file` with the cursor on `line`, e.g. for a problem. */
+  reveal(file: string, line: number): void {
+    this.pendingReveal = { file, line };
+    this.show(file);
+  }
+
+  /** The line waiting to be revealed in `file`, once; editors call this. */
+  takeReveal(file: string): number | undefined {
+    if (this.pendingReveal?.file !== file) return undefined;
+    const { line } = this.pendingReveal;
+    this.pendingReveal = null;
+    return line;
   }
 
   close(file: string): void {

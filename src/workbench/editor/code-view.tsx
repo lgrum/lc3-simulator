@@ -156,6 +156,44 @@ function sourceSync(workbench: Workbench, file: string): Extension {
   ];
 }
 
+/**
+ * Moves the cursor to a line another view asked for, e.g. a clicked
+ * problem, once the editor is showing.
+ */
+function revealRequests(workbench: Workbench, file: string): Extension {
+  return ViewPlugin.define((view) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // React may create a view and destroy it right away (StrictMode); only
+    // a live view may take the request.
+    let alive = true;
+    const check = () => {
+      if (!alive) return;
+      const line = workbench.tabs.takeReveal(file);
+      if (line === undefined) return;
+      // Wait for React to show the tab, so the editor can scroll and focus.
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const { doc } = view.state;
+        const at = doc.line(Math.min(Math.max(line, 1), doc.lines)).from;
+        view.dispatch({
+          selection: { anchor: at },
+          effects: EditorView.scrollIntoView(at, { y: "center" }),
+        });
+        view.focus();
+      });
+    };
+    const unsubscribe = workbench.tabs.subscribe(check);
+    queueMicrotask(check);
+    return {
+      destroy: () => {
+        alive = false;
+        unsubscribe();
+        clearTimeout(timer);
+      },
+    };
+  });
+}
+
 function trackCursor(workbench: Workbench, file: string): Extension {
   return EditorView.updateListener.of((update) => {
     if (update.selectionSet || (update.focusChanged && update.view.hasFocus))
@@ -181,6 +219,7 @@ function extensionsFor(
     followTheme(),
     EditorView.contentAttributes.of({ "aria-label": label, translate: "no" }),
     trackCursor(workbench, file),
+    revealRequests(workbench, file),
   ];
   if (file === workbench.os.file)
     return [

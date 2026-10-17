@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 
 import { m } from "@/paraglide/messages";
 
+import { LinkMapView } from "./build/link-map-view";
+import { ProblemsView } from "./build/problems-view";
 import { ConsoleView, useWaitingForInput } from "./console/console-view";
 import { BreakpointsView } from "./debug/breakpoints-view";
 import { TraceView } from "./debug/trace-view";
@@ -14,9 +16,15 @@ import {
   ScreenTabPanel,
   ScreenTabs,
 } from "./ui/screen-tabs";
-import { useMachineRead, useSnapshot } from "./workbench-provider";
+import { useAssembly, useMachineRead, useSnapshot } from "./workbench-provider";
 
-type BottomTab = "console" | "trace" | "breakpoints" | "watchpoints";
+type BottomTab =
+  | "console"
+  | "problems"
+  | "linkmap"
+  | "trace"
+  | "breakpoints"
+  | "watchpoints";
 
 function Count({ value }: { value: number }) {
   if (value === 0) return null;
@@ -48,14 +56,21 @@ function ToolButton({
 export function BottomPanel() {
   const { output, version } = useSnapshot();
   const waiting = useWaitingForInput();
-  // A program waiting for a key brings the console forward, unless the user
-  // picked another tab since the machine last changed.
-  const [choice, setChoice] = useState<{ tab: BottomTab; version: number }>({
-    tab: "console",
-    version: -1,
-  });
+  const { diagnostics } = useAssembly();
+  const failed = diagnostics.some(({ severity }) => severity === "error");
+  // A failed build brings Problems forward and a program waiting for a key
+  // brings the console forward, unless the user picked another tab since.
+  const [choice, setChoice] = useState<{
+    tab: BottomTab;
+    version: number;
+    diagnostics: typeof diagnostics | null;
+  }>({ tab: "console", version: -1, diagnostics: null });
   const tab: BottomTab =
-    waiting && choice.version !== version ? "console" : choice.tab;
+    failed && choice.diagnostics !== diagnostics
+      ? "problems"
+      : waiting && choice.version !== version
+        ? "console"
+        : choice.tab;
   const [clearedAt, setClearedAt] = useState(0);
   const counts = useMachineRead((machine) => ({
     breakpoints: machine.breakpoints.list().length,
@@ -66,7 +81,9 @@ export function BottomPanel() {
     <Screen>
       <ScreenTabs
         value={tab}
-        onValueChange={(value: BottomTab) => setChoice({ tab: value, version })}
+        onValueChange={(value: BottomTab) =>
+          setChoice({ tab: value, version, diagnostics })
+        }
         className="flex min-h-0 flex-1 flex-col"
       >
         <ScreenTabList>
@@ -79,6 +96,11 @@ export function BottomPanel() {
               />
             )}
           </ScreenTab>
+          <ScreenTab value="problems">
+            {m.problems()}
+            <Count value={diagnostics.length} />
+          </ScreenTab>
+          <ScreenTab value="linkmap">{m.link_map()}</ScreenTab>
           <ScreenTab value="trace">{m.trace()}</ScreenTab>
           <ScreenTab value="breakpoints">
             {m.breakpoints()}
@@ -98,6 +120,12 @@ export function BottomPanel() {
         </ScreenTabList>
         <ScreenTabPanel value="console" keepMounted>
           <ConsoleView clearedAt={clearedAt} />
+        </ScreenTabPanel>
+        <ScreenTabPanel value="problems">
+          <ProblemsView />
+        </ScreenTabPanel>
+        <ScreenTabPanel value="linkmap">
+          <LinkMapView />
         </ScreenTabPanel>
         <ScreenTabPanel value="trace">
           <TraceView />

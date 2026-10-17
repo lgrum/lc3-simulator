@@ -162,5 +162,17 @@
   "file_delete_confirm": "Delete {file}? This can't be undone.",
   "file_replace_one_confirm": "Replace {file} with the file you picked?",
   "project_replace_confirm": "Replace all the files in the project? Your changes are not saved anywhere else.",
-  "location_file_line": "{file} line {line}"
+  "location_file_line": "{file} line {line}",
+  "problems": "Problems",
+  "problems_empty": "No problems in the last assemble.",
+  "problem_whole_program": "Whole program",
+  "severity_error": "Error",
+  "severity_warning": "Warning",
+  "severity_info": "Note",
+  "link_map": "Link map",
+  "link_map_empty": "Assemble the project to see where each file goes in memory.",
+  "link_map_no_words": "at {start}, no words",
+  "column_file": "File",
+  "column_addresses": "Addresses",
+  "column_labels": "Labels"
 }

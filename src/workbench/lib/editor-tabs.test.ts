@@ -50,4 +50,14 @@ describe("EditorTabs", () => {
     project.setText("trig.asm", "changed");
     expect(tabs.takeEditorState("trig.asm")).toBeUndefined();
   });
+
+  it("reveals a line once, in the file it was asked for", () => {
+    const { tabs } = setup();
+    tabs.reveal("trig.asm", 7);
+    expect(tabs.getState().open).toContain("trig.asm");
+    expect(tabs.getState().chosen?.file).toBe("trig.asm");
+    expect(tabs.takeReveal("main.asm")).toBeUndefined();
+    expect(tabs.takeReveal("trig.asm")).toBe(7);
+    expect(tabs.takeReveal("trig.asm")).toBeUndefined();
+  });
 });

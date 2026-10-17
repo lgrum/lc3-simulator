@@ -112,4 +112,53 @@ describe("AssemblyStore", () => {
     expect(machine.breakpoints.list()).toHaveLength(0);
     expect(machine.watchpoints.list()).toHaveLength(0);
   });
+
+  it("reports one problem per broken file, then the link errors", () => {
+    const { project, store } = setup(".EXTERNAL MATH-SQRT\nHALT\n");
+    project.writeFile("p.asm", "BR NOWHERE\n");
+    project.writeFile("q.asm", "ADD R0\n");
+    expect(store.assemble()).toBe(false);
+    expect(
+      store
+        .getState()
+        .diagnostics.map(({ file, severity }) => [file, severity]),
+    ).toEqual([
+      ["p.asm", "error"],
+      ["q.asm", "error"],
+    ]);
+
+    project.setText("p.asm", "X RET\n");
+    project.setText("q.asm", ".ORIG x4000\nY RET\n");
+    expect(store.assemble()).toBe(false);
+    expect(store.getState().diagnostics).toEqual([
+      {
+        file: "a.asm",
+        position: { line: 1 },
+        severity: "error",
+        text: "No module named MATH in this program",
+      },
+    ]);
+  });
+
+  it("shows labels of other modules with their prefix", () => {
+    const { machine, project, store } = setup(
+      ".EXTERNAL P-GO\n.EXTERNAL Q-GO\nLOOP BR LOOP\n",
+    );
+    project.writeFile("p.asm", "GO RET\nLOOP BR LOOP\n");
+    project.writeFile("q.asm", "GO RET\nLOOP BR LOOP\n");
+    expect(store.assemble()).toBe(true);
+    expect(machine.disassemble(0x3000)).toMatchObject({
+      label: "LOOP",
+      text: expect.stringMatching(/ LOOP$/),
+    });
+    expect(machine.disassemble(0x3002)).toMatchObject({
+      label: "P-LOOP",
+      text: expect.stringMatching(/ P-LOOP$/),
+    });
+    expect(machine.disassemble(0x3004)).toMatchObject({
+      label: "Q-LOOP",
+      text: expect.stringMatching(/ Q-LOOP$/),
+    });
+    expect(machine.lookupSymbol("q-loop")).toBe(0x3004);
+  });
 });
