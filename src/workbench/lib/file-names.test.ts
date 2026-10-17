@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { fileNameProblem, toFileName, unusedName } from "./file-names";
+import {
+  fileNameProblem,
+  folderNameProblem,
+  toFileName,
+  unusedName,
+} from "./file-names";
 
 describe("file names", () => {
-  const existing = new Set(["main.asm", "lib/trig.asm"]);
+  const existing = new Set(["main.asm", "lib", "lib/trig.asm"]);
 
   it("adds .asm and accepts valid module names", () => {
     expect(toFileName("trig")).toBe("trig.asm");
@@ -24,5 +29,12 @@ describe("file names", () => {
   it("finds an unused name", () => {
     expect(unusedName("main", "", existing)).toBe("main2.asm");
     expect(unusedName("trig", "", existing)).toBe("trig.asm");
+  });
+
+  it("checks folder names", () => {
+    expect(folderNameProblem("lib", "", existing)).toBe("exists");
+    expect(folderNameProblem("src-2.old", "", existing)).toBeNull();
+    expect(folderNameProblem("a/b", "", existing)).toBe("folder-invalid");
+    expect(folderNameProblem(" ", "", existing)).toBe("empty");
   });
 });

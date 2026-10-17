@@ -108,4 +108,56 @@ describe("ProjectStore", () => {
     none.setText("hello.asm", "MEMORY");
     expect(none.getText("hello.asm")).toBe("MEMORY");
   });
+
+  it("moves files and whole folders, following the entry file", () => {
+    const storage = memoryStorage();
+    const project = store(storage);
+    project.writeFile("lib/trig.asm", "SIN");
+    project.writeFile("lib/deep/x.asm", "X");
+    project.createFolder("lib/empty");
+
+    expect(project.move("hello.asm", "app/hello.asm")).toEqual(
+      new Map([["hello.asm", "app/hello.asm"]]),
+    );
+    expect(project.getProject().entry).toBe("app/hello.asm");
+
+    expect(project.move("lib", "src")).toEqual(
+      new Map([
+        ["lib/trig.asm", "src/trig.asm"],
+        ["lib/deep/x.asm", "src/deep/x.asm"],
+      ]),
+    );
+    const moved = store(storage).getProject();
+    expect([...moved.files.keys()].sort()).toEqual([
+      "app/hello.asm",
+      "src/deep/x.asm",
+      "src/trig.asm",
+    ]);
+    expect([...moved.folders].sort()).toEqual([
+      "app",
+      "src",
+      "src/deep",
+      "src/empty",
+    ]);
+  });
+
+  it("refuses moves that overwrite or go into themselves", () => {
+    const project = store(memoryStorage());
+    project.writeFile("lib/hello.asm", "OTHER");
+    expect(() => project.move("hello.asm", "lib/hello.asm")).toThrow();
+    expect(() => project.move("lib", "lib/inner")).toThrow();
+    expect(project.getText("hello.asm")).toBe("HELLO");
+  });
+
+  it("deletes a folder with everything in it, but not the entry file", () => {
+    const project = store(memoryStorage());
+    project.writeFile("lib/a.asm", "A");
+    project.writeFile("lib/sub/b.asm", "B");
+    project.deleteFolder("lib");
+    expect([...project.getProject().files.keys()]).toEqual(["hello.asm"]);
+    expect([...project.getProject().folders]).toEqual([]);
+
+    project.move("hello.asm", "app/hello.asm");
+    expect(() => project.deleteFolder("app")).toThrow();
+  });
 });

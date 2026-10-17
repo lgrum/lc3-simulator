@@ -41,11 +41,7 @@ function createWorkbench(): Workbench {
   const machine = createMachineController();
   const [example] = EXAMPLES;
   const changes = new ChangeTracker(machine);
-  const project = new ProjectStore({
-    files: { [example.fileName]: example.source },
-    folders: [],
-    entry: example.fileName,
-  });
+  const project = new ProjectStore(example.project);
   const osLines = createLineMaps(assembleOs()).get(OS_FILE) ?? {
     addressOf: new Map(),
     lineOf: new Map(),

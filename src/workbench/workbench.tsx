@@ -6,6 +6,7 @@ import { getLocale } from "@/paraglide/runtime";
 import { BottomPanel } from "./bottom-panel";
 import { EditorPanel } from "./editor/editor-panel";
 import { FileSidebar } from "./files/file-sidebar";
+import { FilesProvider } from "./files/files-context";
 import { MemoryPanel } from "./memory/memory-panel";
 import { RegistersPanel } from "./registers/registers-panel";
 import { StatusBar } from "./status-bar";
@@ -24,24 +25,27 @@ export function Workbench() {
   return (
     <WorkbenchProvider>
       <TooltipProvider delay={400}>
-        <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[48px_minmax(0,1fr)_26px] bg-linear-to-b from-case-top to-case-bottom text-[13px] text-silk">
-          <Toolbar />
-          {/* Side by side on desktops; stacked and scrolling on tablets. */}
-          <main className="relative grid min-h-0 grid-cols-[minmax(0,1fr)_540px] gap-2.5 p-2.5 max-[1100px]:grid-cols-[minmax(0,1fr)] max-[1100px]:grid-rows-[max-content_max-content] max-[1100px]:overflow-y-auto">
-            <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] gap-2.5 max-[1100px]:grid-rows-[60dvh_260px]">
-              <div className="grid min-h-0 grid-cols-[190px_minmax(0,1fr)] gap-2.5">
-                <FileSidebar />
-                <EditorPanel />
+        <FilesProvider>
+          <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[48px_minmax(0,1fr)_26px] bg-linear-to-b from-case-top to-case-bottom text-[13px] text-silk">
+            <Toolbar />
+            {/* Side by side on desktops; stacked and scrolling on tablets. */}
+            <main className="relative grid min-h-0 grid-cols-[minmax(0,1fr)_540px] gap-2.5 p-2.5 max-[1100px]:grid-cols-[minmax(0,1fr)] max-[1100px]:grid-rows-[max-content_max-content] max-[1100px]:overflow-y-auto">
+              <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] gap-2.5 max-[1100px]:grid-rows-[60dvh_260px]">
+                {/* On phones the file sidebar opens as a sheet instead. */}
+                <div className="grid min-h-0 grid-cols-[210px_minmax(0,1fr)] gap-2.5 max-[800px]:grid-cols-[minmax(0,1fr)]">
+                  <FileSidebar />
+                  <EditorPanel />
+                </div>
+                <BottomPanel />
               </div>
-              <BottomPanel />
-            </div>
-            <div className="grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-2.5 max-[1100px]:grid-rows-[max-content_420px]">
-              <RegistersPanel />
-              <MemoryPanel />
-            </div>
-          </main>
-          <StatusBar />
-        </div>
+              <div className="grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-2.5 max-[1100px]:grid-rows-[max-content_420px]">
+                <RegistersPanel />
+                <MemoryPanel />
+              </div>
+            </main>
+            <StatusBar />
+          </div>
+        </FilesProvider>
       </TooltipProvider>
     </WorkbenchProvider>
   );

@@ -60,4 +60,14 @@ describe("EditorTabs", () => {
     expect(tabs.takeReveal("trig.asm")).toBe(7);
     expect(tabs.takeReveal("trig.asm")).toBeUndefined();
   });
+
+  it("keeps tabs open on renamed files", () => {
+    const { project, tabs } = setup();
+    tabs.show("trig.asm");
+    const moves = project.movesFor("trig.asm", "lib/trig.asm");
+    tabs.expectRenames(moves);
+    project.move("trig.asm", "lib/trig.asm");
+    expect(tabs.getState().open).toEqual(["main.asm", "lib/trig.asm"]);
+    expect(tabs.getState().chosen?.file).toBe("lib/trig.asm");
+  });
 });

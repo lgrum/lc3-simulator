@@ -11,9 +11,14 @@ import {
 import { m } from "@/paraglide/messages";
 
 import { openProject, writeFile } from "../actions";
-import { EXAMPLES } from "../examples";
-import { NEW_FILE_TEXT, nameProblemText } from "../files/shared";
-import { baseName, fileNameProblem, unusedName } from "../lib/file-names";
+import { EXAMPLES, isExampleText } from "../examples";
+import { NEW_FILE_TEXT, downloadFile, nameProblemText } from "../files/shared";
+import {
+  baseName,
+  fileNameProblem,
+  toFileName,
+  unusedName,
+} from "../lib/file-names";
 import type { SavedProject } from "../lib/project-store";
 import { Key } from "../ui/key";
 import { useWorkbench } from "../workbench-provider";
@@ -23,9 +28,7 @@ import type { Workbench } from "../workbench-provider";
 function hasOwnWork({ project }: Workbench): boolean {
   return [...project.getProject().files.values()].some(
     (text) =>
-      text.trim() !== "" &&
-      text !== NEW_FILE_TEXT &&
-      !EXAMPLES.some((example) => example.source === text),
+      text.trim() !== "" && text !== NEW_FILE_TEXT && !isExampleText(text),
   );
 }
 
@@ -46,15 +49,6 @@ function activeFile({ project, tabs }: Workbench): string {
     : project.getProject().entry;
 }
 
-function download(path: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = baseName(path);
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 /** Adds a file from disk to the project root, asking before replacing one. */
 function addUpload(workbench: Workbench, name: string, text: string) {
   const files = workbench.project.getProject().files;
@@ -62,7 +56,7 @@ function addUpload(workbench: Workbench, name: string, text: string) {
   if (problem === "exists") {
     if (!window.confirm(m.file_replace_one_confirm({ file: name }))) return;
   } else if (problem) {
-    window.alert(nameProblemText(problem, name));
+    window.alert(nameProblemText(problem, toFileName(name)));
     return;
   }
   writeFile(workbench, name, text);
@@ -108,7 +102,10 @@ export function FileMenu() {
           <MenuItem
             onClick={() => {
               const path = activeFile(workbench);
-              download(path, workbench.project.getText(path) ?? "");
+              downloadFile(
+                baseName(path),
+                workbench.project.getText(path) ?? "",
+              );
             }}
           >
             {m.file_save()}
@@ -139,16 +136,7 @@ export function ExamplesMenu() {
       <MenuKey>{m.menu_examples()}</MenuKey>
       <MenuPopup align="start">
         {EXAMPLES.map((example) => (
-          <MenuItem
-            key={example.fileName}
-            onClick={() =>
-              open({
-                files: { [example.fileName]: example.source },
-                folders: [],
-                entry: example.fileName,
-              })
-            }
-          >
+          <MenuItem key={example.id} onClick={() => open(example.project)}>
             {example.title()}
           </MenuItem>
         ))}

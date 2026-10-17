@@ -28,6 +28,28 @@ export function deleteFile(workbench: Workbench, path: string): void {
   workbench.project.deleteFile(path);
 }
 
+/**
+ * Renames or moves a file or folder. Open tabs and breakpoints follow the
+ * files.
+ */
+export function movePath(workbench: Workbench, from: string, to: string): void {
+  const { project, tabs, assembly } = workbench;
+  const moves = project.movesFor(from, to);
+  tabs.expectRenames(moves);
+  project.move(from, to);
+  assembly.breakpoints.renameFiles(moves);
+  const cursorFile = moves.get(workbench.cursor.file);
+  if (cursorFile) workbench.cursor = { ...workbench.cursor, file: cursorFile };
+}
+
+/** Deletes a folder with its files and their breakpoints. */
+export function deleteFolder(workbench: Workbench, path: string): void {
+  for (const file of workbench.project.getProject().files.keys())
+    if (file.startsWith(path + "/"))
+      workbench.assembly.breakpoints.removeFile(file);
+  workbench.project.deleteFolder(path);
+}
+
 /** Replaces the project, e.g. with an example, and assembles it. */
 export function openProject(
   workbench: Workbench,

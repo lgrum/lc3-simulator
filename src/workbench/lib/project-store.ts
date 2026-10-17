@@ -162,6 +162,65 @@ export class ProjectStore {
     this.change({ files });
   }
 
+  /** The files and folders a move of `from` to `to` would rename. */
+  movesFor(from: string, to: string): Map<string, string> {
+    const moves = new Map<string, string>();
+    const prefix = from + "/";
+    for (const path of [...this.project.files.keys(), ...this.project.folders])
+      if (path === from) moves.set(path, to);
+      else if (path.startsWith(prefix))
+        moves.set(path, to + "/" + path.slice(prefix.length));
+    return moves;
+  }
+
+  /**
+   * Renames or moves a file or a folder with everything in it. Returns the
+   * new path of each moved file. Refuses to overwrite.
+   */
+  move(from: string, to: string): Map<string, string> {
+    if (from === to) return new Map();
+    if (to.startsWith(from + "/"))
+      throw new Error(`Can't move ${from} into itself`);
+    const moves = this.movesFor(from, to);
+    const files = new Map<string, string>();
+    const folders = new Set<string>();
+    for (const [path, text] of this.project.files) {
+      const target = moves.get(path) ?? path;
+      if (files.has(target)) throw new Error(`${target} already exists`);
+      files.set(target, text);
+    }
+    for (const folder of this.project.folders) {
+      const target = moves.get(folder) ?? folder;
+      if (this.project.files.has(target) && !moves.has(target))
+        throw new Error(`${target} already exists`);
+      folders.add(target);
+    }
+    for (const path of [...files.keys(), ...folders])
+      for (const folder of parentsOf(path)) folders.add(folder);
+    const fileMoves = new Map(
+      [...moves].filter(([path]) => this.project.files.has(path)),
+    );
+    if (moves.size === 0) return fileMoves;
+    this.change({
+      files,
+      folders,
+      entry: moves.get(this.project.entry) ?? this.project.entry,
+    });
+    return fileMoves;
+  }
+
+  /** Deletes a folder with every file and folder in it. */
+  deleteFolder(path: string): void {
+    const inside = (other: string) =>
+      other === path || other.startsWith(path + "/");
+    if (inside(this.project.entry))
+      throw new Error("The entry file can't be deleted");
+    this.change({
+      files: new Map([...this.project.files].filter(([file]) => !inside(file))),
+      folders: new Set([...this.project.folders].filter((f) => !inside(f))),
+    });
+  }
+
   createFolder(path: string): void {
     if (this.project.folders.has(path)) return;
     const folders = new Set(this.project.folders);

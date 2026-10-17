@@ -23,6 +23,8 @@ export class EditorTabs {
   private readonly saved = new Map<string, EditorState>();
   /** A line to put the cursor on once its file's editor is showing. */
   private pendingReveal: { file: string; line: number } | null = null;
+  /** Files about to be renamed, whose tabs follow them. */
+  private renames = new Map<string, string>();
 
   constructor(
     private readonly project: ProjectStore,
@@ -90,6 +92,11 @@ export class EditorTabs {
       : undefined;
   }
 
+  /** Keeps the tabs of files the project is about to rename open. */
+  expectRenames(moves: ReadonlyMap<string, string>): void {
+    this.renames = new Map(moves);
+  }
+
   /** Forgets kept editor states, e.g. when another project is opened. */
   forgetEditorStates(): void {
     this.saved.clear();
@@ -97,16 +104,26 @@ export class EditorTabs {
 
   private prune(): void {
     const { files, entry } = this.project.getProject();
+    const renames = this.renames;
+    this.renames = new Map();
+    const renamed = (file: string) => renames.get(file) ?? file;
     for (const file of this.saved.keys())
       if (!files.has(file)) this.saved.delete(file);
-    const open = this.state.open.filter((file) => files.has(file));
-    if (open.length === this.state.open.length) return;
+    const open = this.state.open.map(renamed).filter((file) => files.has(file));
+    const chosen = this.state.chosen && {
+      ...this.state.chosen,
+      file: renamed(this.state.chosen.file),
+    };
+    if (
+      open.length === this.state.open.length &&
+      open.every((file, i) => file === this.state.open[i])
+    )
+      return;
     if (open.length === 0) open.push(entry);
-    const chosen =
-      this.state.chosen && open.includes(this.state.chosen.file)
-        ? this.state.chosen
-        : null;
-    this.publish({ open, chosen });
+    this.publish({
+      open,
+      chosen: chosen && open.includes(chosen.file) ? chosen : null,
+    });
   }
 
   private publish(state: EditorTabsState): void {

@@ -4,6 +4,7 @@ import { Suspense, lazy, useEffect } from "react";
 import { m } from "@/paraglide/messages";
 
 import { tracksPc } from "../actions";
+import { FilesTrigger } from "../files/files-context";
 import { baseName } from "../lib/file-names";
 import { Screen } from "../ui/surfaces";
 import {
@@ -91,6 +92,7 @@ export function EditorPanel() {
         className="flex min-h-0 flex-1 flex-col"
       >
         <ScreenTabList className="overflow-x-auto">
+          <FilesTrigger />
           {fileTabs.map((file) => (
             <span key={file} className="flex flex-none items-center">
               <ScreenTab value={file} title={file}>

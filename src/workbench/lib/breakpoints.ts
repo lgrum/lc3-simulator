@@ -102,6 +102,13 @@ export class BreakpointLines {
     }
   }
 
+  /** Moves breakpoints along with renamed files. */
+  renameFiles(moves: ReadonlyMap<string, string>): void {
+    this.capture();
+    for (const location of this.locations.values())
+      location.file = moves.get(location.file) ?? location.file;
+  }
+
   /** Removes the breakpoints in `file`, e.g. when it is deleted. */
   removeFile(file: string): void {
     this.capture();

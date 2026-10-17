@@ -156,8 +156,8 @@ export function link(
   // Collect the link set: the entry file, then the modules each one imports,
   // breadth-first in the order of their .EXTERNAL lines.
   const linkSet = [entry];
-  for (let i = 0; i < linkSet.length; i++) {
-    const importer = linkSet[i];
+  // The loop also visits modules pushed while it runs.
+  for (const importer of linkSet) {
     for (const external of importer.externals.values()) {
       const target = findModule(importer, external.module);
       if (!target) {

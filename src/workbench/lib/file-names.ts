@@ -56,3 +56,21 @@ export function unusedName(
     if (!existing.has(joinPath(folder, name))) return name;
   }
 }
+
+/** Folder names only organize files, so they are freer than module names. */
+const FOLDER_NAME = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
+
+export type FolderNameProblem = "empty" | "folder-invalid" | "exists";
+
+/** Why `name` can't be a folder in `parent`, or null if it can. */
+export function folderNameProblem(
+  typed: string,
+  parent: string,
+  existing: { has: (path: string) => boolean },
+): FolderNameProblem | null {
+  const name = typed.trim();
+  if (name === "") return "empty";
+  if (!FOLDER_NAME.test(name)) return "folder-invalid";
+  if (existing.has(joinPath(parent, name))) return "exists";
+  return null;
+}
