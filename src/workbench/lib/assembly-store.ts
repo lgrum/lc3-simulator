@@ -3,6 +3,7 @@ import type { AssemblyError } from "@/lib/assembler/assemble-source";
 import type { LinkedImage } from "@/lib/assembler/types";
 import type { MachineController } from "@/lib/simulator/controller";
 
+import { BreakpointLines } from "./breakpoints";
 import type { ChangeTracker } from "./change-tracker";
 import { createLineMaps } from "./line-map";
 import type { LineMap } from "./line-map";
@@ -33,6 +34,8 @@ const INITIAL: Assembly = {
 export class AssemblyStore {
   private state = INITIAL;
   private readonly listeners = new Set<() => void>();
+  /** Breakpoints by source line, put back on their lines after each load. */
+  readonly breakpoints: BreakpointLines;
 
   constructor(
     private readonly machine: Pick<
@@ -41,7 +44,14 @@ export class AssemblyStore {
     >,
     private readonly changes: Pick<ChangeTracker, "rebase">,
     private readonly source: SourceStore,
-  ) {}
+    /** Line maps of files that are always loaded, i.e. the OS. */
+    fixedLines: ReadonlyMap<string, LineMap> = new Map(),
+  ) {
+    this.breakpoints = new BreakpointLines(
+      machine,
+      () => new Map([...fixedLines, ...this.state.lines]),
+    );
+  }
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -60,6 +70,7 @@ export class AssemblyStore {
       this.publish({ ...this.state, error: result.error, assembledText: text });
       return false;
     }
+    this.breakpoints.capture();
     // Publish first, so machine subscribers see the new line map on load.
     this.publish({
       image: result.image,
@@ -68,6 +79,7 @@ export class AssemblyStore {
       assembledText: text,
     });
     this.machine.load(result.image);
+    this.breakpoints.relink();
     this.changes.rebase();
     return true;
   }
@@ -78,8 +90,7 @@ export class AssemblyStore {
    * watchpoints, which the machine keeps by address.
    */
   openFile(file: SourceFile): boolean {
-    for (const point of this.machine.breakpoints.list())
-      this.machine.breakpoints.remove(point.id);
+    this.breakpoints.clear();
     for (const watch of this.machine.watchpoints.list())
       this.machine.watchpoints.remove(watch.id);
     this.source.replace(file);

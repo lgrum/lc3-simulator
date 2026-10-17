@@ -42,7 +42,16 @@ function createWorkbench(): Workbench {
     name: example.fileName,
     text: example.source,
   });
-  const assembly = new AssemblyStore(machine, changes, source);
+  const osLines = createLineMaps(assembleOs()).get(OS_FILE) ?? {
+    addressOf: new Map(),
+    lineOf: new Map(),
+  };
+  const assembly = new AssemblyStore(
+    machine,
+    changes,
+    source,
+    new Map([[OS_FILE, osLines]]),
+  );
   assembly.assemble();
   return {
     machine,
@@ -54,10 +63,7 @@ function createWorkbench(): Workbench {
     os: {
       file: OS_FILE,
       source: osSource,
-      lines: createLineMaps(assembleOs()).get(OS_FILE) ?? {
-        addressOf: new Map(),
-        lineOf: new Map(),
-      },
+      lines: osLines,
     },
     cursor: { file: source.getFile().name, line: 1 },
   };

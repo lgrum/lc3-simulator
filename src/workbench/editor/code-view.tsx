@@ -1,6 +1,6 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap } from "@codemirror/search";
-import { Compartment, EditorState } from "@codemirror/state";
+import { Annotation, Compartment, EditorState } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import {
   EditorView,
@@ -17,7 +17,6 @@ import { useCallback } from "react";
 import { themeStore } from "@/lib/theme";
 
 import { toggleBreakpointAtLine } from "../actions";
-import type { SourceStore } from "../lib/source-store";
 import { useWorkbench } from "../workbench-provider";
 import type { Workbench } from "../workbench-provider";
 import { asmLanguage } from "./asm-language";
@@ -121,11 +120,26 @@ function followTheme(): Extension {
   ];
 }
 
-/** Keeps the editor and the shared buffer in step, in both directions. */
-function sourceSync(store: SourceStore): Extension {
+/** Marks a change that came from the shared buffer, not from typing. */
+const fromStore = Annotation.define<boolean>();
+
+/**
+ * Keeps the editor and the shared buffer in step, in both directions. Typing
+ * moves the file's breakpoints with the lines they are on.
+ */
+function sourceSync(workbench: Workbench, file: string): Extension {
+  const store = workbench.source;
   return [
     EditorView.updateListener.of((update) => {
-      if (update.docChanged) store.setText(update.state.doc.toString());
+      if (!update.docChanged) return;
+      store.setText(update.state.doc.toString());
+      if (update.transactions.some((tr) => tr.annotation(fromStore))) return;
+      const before = update.startState.doc;
+      workbench.assembly.breakpoints.mapLines(file, (line) => {
+        if (line > before.lines) return line;
+        const at = update.changes.mapPos(before.line(line).from, 1);
+        return update.state.doc.lineAt(at).number;
+      });
     }),
     ViewPlugin.define((view) => ({
       destroy: store.subscribe(() => {
@@ -134,6 +148,7 @@ function sourceSync(store: SourceStore): Extension {
           view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: text },
             selection: { anchor: 0 },
+            annotations: fromStore.of(true),
           });
       }),
     })),
@@ -191,7 +206,7 @@ function extensionsFor(
     history(),
     tabStops(),
     keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
-    sourceSync(workbench.source),
+    sourceSync(workbench, file),
     assemblyDiagnostics(() => assembly.getState().error, assembly.subscribe),
   ];
 }
