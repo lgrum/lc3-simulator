@@ -3,7 +3,7 @@ import { BinaryIcon } from "lucide-react";
 import { m } from "@/paraglide/messages";
 
 import { HintedKey, Shortcut } from "../ui/key";
-import { useWorkbench } from "../workbench-provider";
+import { useIsStale, useWorkbench } from "../workbench-provider";
 import { ExamplesMenu, FileMenu } from "./file-menus";
 import { RunControls } from "./run-controls";
 import { RunState } from "./run-state";
@@ -11,6 +11,19 @@ import { useShortcuts } from "./use-shortcuts";
 
 function Separator() {
   return <span aria-hidden className="mx-1 h-6 w-px bg-edge" />;
+}
+
+/** Shows that a file changed since the last assemble. */
+function StaleDot() {
+  if (!useIsStale()) return null;
+  return (
+    <span
+      className="size-1.5 rounded-full bg-phosphor"
+      title={m.editor_modified()}
+    >
+      <span className="sr-only">{m.editor_modified()}</span>
+    </span>
+  );
 }
 
 export function Toolbar() {
@@ -32,6 +45,7 @@ export function Toolbar() {
       >
         <BinaryIcon aria-hidden />
         {m.assemble()}
+        <StaleDot />
       </HintedKey>
       <Separator />
       <RunControls />

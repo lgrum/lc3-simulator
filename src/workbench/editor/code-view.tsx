@@ -120,20 +120,21 @@ function followTheme(): Extension {
   ];
 }
 
-/** Marks a change that came from the shared buffer, not from typing. */
+/** Marks a change that came from the project, not from typing. */
 const fromStore = Annotation.define<boolean>();
 
 /**
- * Keeps the editor and the shared buffer in step, in both directions. Typing
+ * Keeps the editor and the project file in step, in both directions. Typing
  * moves the file's breakpoints with the lines they are on.
  */
 function sourceSync(workbench: Workbench, file: string): Extension {
-  const store = workbench.source;
+  const { project } = workbench;
   return [
     EditorView.updateListener.of((update) => {
       if (!update.docChanged) return;
-      store.setText(update.state.doc.toString());
       if (update.transactions.some((tr) => tr.annotation(fromStore))) return;
+      if (project.getText(file) !== undefined)
+        project.setText(file, update.state.doc.toString());
       const before = update.startState.doc;
       workbench.assembly.breakpoints.mapLines(file, (line) => {
         if (line > before.lines) return line;
@@ -142,9 +143,9 @@ function sourceSync(workbench: Workbench, file: string): Extension {
       });
     }),
     ViewPlugin.define((view) => ({
-      destroy: store.subscribe(() => {
-        const { text } = store.getFile();
-        if (text !== view.state.doc.toString())
+      destroy: project.subscribe(() => {
+        const text = project.getText(file);
+        if (text !== undefined && text !== view.state.doc.toString())
           view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: text },
             selection: { anchor: 0 },
@@ -207,7 +208,10 @@ function extensionsFor(
     tabStops(),
     keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
     sourceSync(workbench, file),
-    assemblyDiagnostics(() => assembly.getState().error, assembly.subscribe),
+    assemblyDiagnostics(() => {
+      const { error } = assembly.getState();
+      return error?.file === file ? error.error : null;
+    }, assembly.subscribe),
   ];
 }
 
@@ -218,18 +222,24 @@ export function CodeView({ file, label }: { file: string; label: string }) {
   const mount = useCallback(
     (parent: HTMLDivElement | null) => {
       if (!parent) return;
-      const doc =
-        file === workbench.os.file
-          ? workbench.os.source
-          : workbench.source.getFile().text;
+      const isOs = file === workbench.os.file;
       const view = new EditorView({
         parent,
-        state: EditorState.create({
-          doc,
-          extensions: extensionsFor(workbench, file, label),
-        }),
+        // A file whose tab was closed comes back with its undo history.
+        state:
+          (!isOs && workbench.tabs.takeEditorState(file)) ||
+          EditorState.create({
+            doc: isOs
+              ? workbench.os.source
+              : (workbench.project.getText(file) ?? ""),
+            extensions: extensionsFor(workbench, file, label),
+          }),
       });
-      return () => view.destroy();
+      return () => {
+        if (!isOs && workbench.project.getText(file) !== undefined)
+          workbench.tabs.saveEditorState(file, view.state);
+        view.destroy();
+      };
     },
     [workbench, file, label],
   );

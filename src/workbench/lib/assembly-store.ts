@@ -7,29 +7,29 @@ import { BreakpointLines } from "./breakpoints";
 import type { ChangeTracker } from "./change-tracker";
 import { createLineMaps } from "./line-map";
 import type { LineMap } from "./line-map";
-import type { SourceFile, SourceStore } from "./source-store";
+import type { ProjectStore, SavedProject } from "./project-store";
 
 export type Assembly = {
   /** The image loaded into the machine, from the last successful assemble. */
   image: LinkedImage | null;
   /** One line map per file of the loaded image. */
   lines: ReadonlyMap<string, LineMap>;
-  /** The error from the last assemble, if it failed. */
-  error: AssemblyError | null;
-  /** The editor text that was last assembled, to tell when it is stale. */
-  assembledText: string | null;
+  /** The error from the last assemble, if it failed, and its file. */
+  error: { file: string; error: AssemblyError } | null;
+  /** The project revision that was last assembled, to tell when it is stale. */
+  revision: number | null;
 };
 
 const INITIAL: Assembly = {
   image: null,
   lines: new Map(),
   error: null,
-  assembledText: null,
+  revision: null,
 };
 
 /**
- * Assembles the editor buffer and loads it into the machine. Compatible with
- * useSyncExternalStore.
+ * Assembles the project from its entry file and loads it into the machine.
+ * Compatible with useSyncExternalStore.
  */
 export class AssemblyStore {
   private state = INITIAL;
@@ -43,7 +43,7 @@ export class AssemblyStore {
       "load" | "breakpoints" | "watchpoints"
     >,
     private readonly changes: Pick<ChangeTracker, "rebase">,
-    private readonly source: SourceStore,
+    private readonly project: ProjectStore,
     /** Line maps of files that are always loaded, i.e. the OS. */
     fixedLines: ReadonlyMap<string, LineMap> = new Map(),
   ) {
@@ -62,12 +62,21 @@ export class AssemblyStore {
 
   getState = (): Assembly => this.state;
 
-  /** Assembles the editor buffer and loads it. Returns whether it worked. */
+  /** Whether the project changed since the last assemble. */
+  isStale(): boolean {
+    return this.state.revision !== this.project.getProject().revision;
+  }
+
+  /** Assembles the project and loads it. Returns whether it worked. */
   assemble(): boolean {
-    const { name, text } = this.source.getFile();
-    const result = assembleSource(text, name);
+    const { entry, files, revision } = this.project.getProject();
+    const result = assembleSource(files.get(entry) ?? "", entry);
     if (!result.ok) {
-      this.publish({ ...this.state, error: result.error, assembledText: text });
+      this.publish({
+        ...this.state,
+        error: { file: entry, error: result.error },
+        revision,
+      });
       return false;
     }
     this.breakpoints.capture();
@@ -76,7 +85,7 @@ export class AssemblyStore {
       image: result.image,
       lines: createLineMaps(result.image),
       error: null,
-      assembledText: text,
+      revision,
     });
     this.machine.load(result.image);
     this.breakpoints.relink();
@@ -85,15 +94,15 @@ export class AssemblyStore {
   }
 
   /**
-   * Replaces the editor buffer, e.g. with an example, and assembles it. A
-   * different program starts without the old one's breakpoints and
-   * watchpoints, which the machine keeps by address.
+   * Replaces the project, e.g. with an example, and assembles it. A different
+   * program starts without the old one's breakpoints and watchpoints, which
+   * the machine keeps by address.
    */
-  openFile(file: SourceFile): boolean {
+  openProject(project: SavedProject): boolean {
     this.breakpoints.clear();
     for (const watch of this.machine.watchpoints.list())
       this.machine.watchpoints.remove(watch.id);
-    this.source.replace(file);
+    this.project.replace(project);
     return this.assemble();
   }
 

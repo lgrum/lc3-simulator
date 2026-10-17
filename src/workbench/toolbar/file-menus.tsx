@@ -10,43 +10,62 @@ import {
 } from "@/components/ui/menu";
 import { m } from "@/paraglide/messages";
 
+import { openProject, writeFile } from "../actions";
 import { EXAMPLES } from "../examples";
-import type { SourceFile } from "../lib/source-store";
+import { NEW_FILE_TEXT, nameProblemText } from "../files/shared";
+import { baseName, fileNameProblem, unusedName } from "../lib/file-names";
+import type { SavedProject } from "../lib/project-store";
 import { Key } from "../ui/key";
 import { useWorkbench } from "../workbench-provider";
 import type { Workbench } from "../workbench-provider";
 
-const NEW_FILE: SourceFile = {
-  name: "untitled.asm",
-  text: "; New program\n        .ORIG x3000\n\n        HALT\n        .END\n",
-};
-
-/** Whether replacing the buffer would lose work that only exists here. */
-function hasOwnWork({ source }: Workbench): boolean {
-  const { text } = source.getFile();
-  return (
-    text.trim() !== "" &&
-    text !== NEW_FILE.text &&
-    !EXAMPLES.some((example) => example.source === text)
+/** Whether replacing the project would lose work that only exists here. */
+function hasOwnWork({ project }: Workbench): boolean {
+  return [...project.getProject().files.values()].some(
+    (text) =>
+      text.trim() !== "" &&
+      text !== NEW_FILE_TEXT &&
+      !EXAMPLES.some((example) => example.source === text),
   );
 }
 
-function useOpenFile() {
+function useOpenProject() {
   const workbench = useWorkbench();
-  return (file: SourceFile) => {
-    if (hasOwnWork(workbench) && !window.confirm(m.file_replace_confirm()))
+  return (project: SavedProject) => {
+    if (hasOwnWork(workbench) && !window.confirm(m.project_replace_confirm()))
       return;
-    workbench.assembly.openFile(file);
+    openProject(workbench, project);
   };
 }
 
-function download({ name, text }: SourceFile) {
+/** The file of the tab the editor shows, or the entry file. */
+function activeFile({ project, tabs }: Workbench): string {
+  const chosen = tabs.getState().chosen?.file;
+  return chosen !== undefined && project.getText(chosen) !== undefined
+    ? chosen
+    : project.getProject().entry;
+}
+
+function download(path: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = name.endsWith(".asm") ? name : `${name}.asm`;
+  link.download = baseName(path);
   link.click();
   URL.revokeObjectURL(url);
+}
+
+/** Adds a file from disk to the project root, asking before replacing one. */
+function addUpload(workbench: Workbench, name: string, text: string) {
+  const files = workbench.project.getProject().files;
+  const problem = fileNameProblem(name, "", files);
+  if (problem === "exists") {
+    if (!window.confirm(m.file_replace_one_confirm({ file: name }))) return;
+  } else if (problem) {
+    window.alert(nameProblemText(problem, name));
+    return;
+  }
+  writeFile(workbench, name, text);
 }
 
 function MenuKey({ children }: { children: React.ReactNode }) {
@@ -60,7 +79,6 @@ function MenuKey({ children }: { children: React.ReactNode }) {
 
 export function FileMenu() {
   const workbench = useWorkbench();
-  const openFile = useOpenFile();
   const input = useRef<HTMLInputElement>(null);
 
   return (
@@ -68,12 +86,31 @@ export function FileMenu() {
       <Menu>
         <MenuKey>{m.menu_file()}</MenuKey>
         <MenuPopup align="start">
-          <MenuItem onClick={() => openFile(NEW_FILE)}>{m.file_new()}</MenuItem>
+          <MenuItem
+            onClick={() =>
+              writeFile(
+                workbench,
+                unusedName(
+                  "untitled",
+                  "",
+                  workbench.project.getProject().files,
+                ),
+                NEW_FILE_TEXT,
+              )
+            }
+          >
+            {m.file_new()}
+          </MenuItem>
           <MenuItem onClick={() => input.current?.click()}>
             {m.file_open()}
           </MenuItem>
           <MenuSeparator />
-          <MenuItem onClick={() => download(workbench.source.getFile())}>
+          <MenuItem
+            onClick={() => {
+              const path = activeFile(workbench);
+              download(path, workbench.project.getText(path) ?? "");
+            }}
+          >
             {m.file_save()}
           </MenuItem>
         </MenuPopup>
@@ -88,7 +125,7 @@ export function FileMenu() {
         onChange={async (event) => {
           const file = event.currentTarget.files?.[0];
           event.currentTarget.value = "";
-          if (file) openFile({ name: file.name, text: await file.text() });
+          if (file) addUpload(workbench, file.name, await file.text());
         }}
       />
     </>
@@ -96,7 +133,7 @@ export function FileMenu() {
 }
 
 export function ExamplesMenu() {
-  const openFile = useOpenFile();
+  const open = useOpenProject();
   return (
     <Menu>
       <MenuKey>{m.menu_examples()}</MenuKey>
@@ -105,7 +142,11 @@ export function ExamplesMenu() {
           <MenuItem
             key={example.fileName}
             onClick={() =>
-              openFile({ name: example.fileName, text: example.source })
+              open({
+                files: { [example.fileName]: example.source },
+                folders: [],
+                entry: example.fileName,
+              })
             }
           >
             {example.title()}

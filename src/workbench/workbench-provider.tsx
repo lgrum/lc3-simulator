@@ -13,17 +13,20 @@ import { EXAMPLES } from "./examples";
 import { AssemblyStore } from "./lib/assembly-store";
 import type { Assembly } from "./lib/assembly-store";
 import { ChangeTracker } from "./lib/change-tracker";
+import { EditorTabs } from "./lib/editor-tabs";
+import type { EditorTabsState } from "./lib/editor-tabs";
 import { createLineMaps } from "./lib/line-map";
 import type { LineMap } from "./lib/line-map";
-import { SourceStore } from "./lib/source-store";
-import type { SourceFile } from "./lib/source-store";
+import { ProjectStore } from "./lib/project-store";
+import type { Project } from "./lib/project-store";
 
 /** Long-lived objects, created once per page and never replaced. */
 export type Workbench = {
   machine: MachineController;
   changes: ChangeTracker;
-  source: SourceStore;
+  project: ProjectStore;
   assembly: AssemblyStore;
+  tabs: EditorTabs;
   subscribe: (callback: () => void) => () => void;
   getSnapshot: () => MachineSnapshot;
   /** The read-only OS file. */
@@ -38,9 +41,10 @@ function createWorkbench(): Workbench {
   const machine = createMachineController();
   const [example] = EXAMPLES;
   const changes = new ChangeTracker(machine);
-  const source = new SourceStore({
-    name: example.fileName,
-    text: example.source,
+  const project = new ProjectStore({
+    files: { [example.fileName]: example.source },
+    folders: [],
+    entry: example.fileName,
   });
   const osLines = createLineMaps(assembleOs()).get(OS_FILE) ?? {
     addressOf: new Map(),
@@ -49,15 +53,17 @@ function createWorkbench(): Workbench {
   const assembly = new AssemblyStore(
     machine,
     changes,
-    source,
+    project,
     new Map([[OS_FILE, osLines]]),
   );
   assembly.assemble();
+  const tabs = new EditorTabs(project, () => machine.getSnapshot().pc);
   return {
     machine,
     changes,
-    source,
+    project,
     assembly,
+    tabs,
     subscribe: machine.subscribe.bind(machine),
     getSnapshot: machine.getSnapshot.bind(machine),
     os: {
@@ -65,7 +71,7 @@ function createWorkbench(): Workbench {
       source: osSource,
       lines: osLines,
     },
-    cursor: { file: source.getFile().name, line: 1 },
+    cursor: { file: project.getProject().entry, line: 1 },
   };
 }
 
@@ -112,9 +118,14 @@ export function useChanges() {
   return useSyncExternalStore(changes.subscribe, changes.getChanges);
 }
 
-export function useSourceFile(): SourceFile {
-  const { source } = useWorkbench();
-  return useSyncExternalStore(source.subscribe, source.getFile);
+export function useProject(): Project {
+  const { project } = useWorkbench();
+  return useSyncExternalStore(project.subscribe, project.getProject);
+}
+
+export function useEditorTabs(): EditorTabsState {
+  const { tabs } = useWorkbench();
+  return useSyncExternalStore(tabs.subscribe, tabs.getState);
 }
 
 export function useAssembly(): Assembly {
@@ -122,8 +133,7 @@ export function useAssembly(): Assembly {
   return useSyncExternalStore(assembly.subscribe, assembly.getState);
 }
 
-/** Whether the editor buffer differs from what was last assembled. */
+/** Whether any file changed since the last assemble. */
 export function useIsStale(): boolean {
-  const file = useSourceFile();
-  return useAssembly().assembledText !== file.text;
+  return useAssembly().revision !== useProject().revision;
 }

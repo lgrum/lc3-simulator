@@ -6,7 +6,7 @@ import { AssemblyStore } from "./assembly-store";
 import { toggleBreakpoint } from "./breakpoints";
 import { ChangeTracker } from "./change-tracker";
 import { addressAtOrAfter } from "./line-map";
-import { SourceStore } from "./source-store";
+import { ProjectStore, localStorageBackend } from "./project-store";
 
 describe("toggleBreakpoint", () => {
   it("adds a breakpoint, then removes every breakpoint at the address", () => {
@@ -31,15 +31,21 @@ const PROGRAM = [
 
 function setup(text = PROGRAM) {
   const machine = createMachineController();
-  const source = new SourceStore({ name: "main.asm", text }, undefined);
-  const store = new AssemblyStore(machine, new ChangeTracker(machine), source);
+  const project = new ProjectStore(
+    { files: { "main.asm": text }, folders: [], entry: "main.asm" },
+    localStorageBackend(null),
+  );
+  const store = new AssemblyStore(machine, new ChangeTracker(machine), project);
+  const source = {
+    setText: (value: string) => project.setText("main.asm", value),
+  };
   store.assemble();
   /** Sets a breakpoint on a line of main.asm, as the gutter does. */
   const breakAt = (line: number) => {
     const lines = store.getState().lines.get("main.asm")!;
     toggleBreakpoint(machine, addressAtOrAfter(lines, line)!);
   };
-  return { machine, source, store, breakAt };
+  return { machine, project, source, store, breakAt };
 }
 
 describe("BreakpointLines", () => {
@@ -102,13 +108,24 @@ describe("BreakpointLines", () => {
   });
 
   it("removes breakpoints whose file is no longer linked", () => {
-    const { machine, source, store, breakAt } = setup();
+    const { machine, project, store, breakAt } = setup();
     breakAt(2);
 
-    source.replace({ name: "other.asm", text: PROGRAM });
+    project.writeFile("other.asm", PROGRAM);
+    project.setEntry("other.asm");
     store.assemble();
 
     expect(machine.breakpoints.list()).toEqual([]);
+  });
+
+  it("removes the breakpoints of a deleted file right away", () => {
+    const { machine, store, breakAt } = setup();
+    breakAt(2);
+    machine.breakpoints.add(0x5000);
+
+    store.breakpoints.removeFile("main.asm");
+
+    expect(machine.breakpoints.list()).toMatchObject([{ addr: 0x5000 }]);
   });
 
   it("keeps breakpoints at addresses without a source line", () => {

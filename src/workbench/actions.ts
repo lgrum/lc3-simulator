@@ -1,18 +1,42 @@
 import type { MachineSnapshot } from "@/lib/simulator/controller";
 
 import { toggleBreakpoint } from "./lib/breakpoints";
+import type { SavedProject } from "./lib/project-store";
 import { addressAtOrAfter } from "./lib/line-map";
 import type { LineMap } from "./lib/line-map";
 import type { Workbench } from "./workbench-provider";
 
-export function isStale({ assembly, source }: Workbench): boolean {
-  return assembly.getState().assembledText !== source.getFile().text;
+/** Assembles first if a file changed. Returns whether a program is loaded. */
+export function ensureAssembled(workbench: Workbench): boolean {
+  if (workbench.assembly.isStale()) return workbench.assembly.assemble();
+  return workbench.assembly.getState().image !== null;
 }
 
-/** Assembles first if the buffer changed. Returns whether a program is loaded. */
-export function ensureAssembled(workbench: Workbench): boolean {
-  if (isStale(workbench)) return workbench.assembly.assemble();
-  return workbench.assembly.getState().image !== null;
+/** Adds a file to the project, or replaces its text, and shows it. */
+export function writeFile(
+  workbench: Workbench,
+  path: string,
+  text: string,
+): void {
+  workbench.project.writeFile(path, text);
+  workbench.tabs.show(path);
+}
+
+/** Deletes a file with its breakpoints. The entry file can't be deleted. */
+export function deleteFile(workbench: Workbench, path: string): void {
+  workbench.assembly.breakpoints.removeFile(path);
+  workbench.project.deleteFile(path);
+}
+
+/** Replaces the project, e.g. with an example, and assembles it. */
+export function openProject(
+  workbench: Workbench,
+  project: SavedProject,
+): boolean {
+  workbench.tabs.forgetEditorStates();
+  const loaded = workbench.assembly.openProject(project);
+  workbench.tabs.show(project.entry);
+  return loaded;
 }
 
 /** The line map of a project file or the OS, if it was loaded. */

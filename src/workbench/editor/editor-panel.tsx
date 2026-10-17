@@ -1,8 +1,10 @@
-import { Suspense, lazy, useState } from "react";
+import { XIcon } from "lucide-react";
+import { Suspense, lazy, useEffect } from "react";
 
 import { m } from "@/paraglide/messages";
 
 import { tracksPc } from "../actions";
+import { baseName } from "../lib/file-names";
 import { Screen } from "../ui/surfaces";
 import {
   ScreenTab,
@@ -12,10 +14,10 @@ import {
 } from "../ui/screen-tabs";
 import {
   useAssembly,
-  useIsStale,
+  useEditorTabs,
   useMachineRead,
+  useProject,
   useSnapshot,
-  useSourceFile,
   useWorkbench,
 } from "../workbench-provider";
 
@@ -38,57 +40,70 @@ function usePcFile(): string | undefined {
 function AssemblyError() {
   const { error } = useAssembly();
   if (!error) return null;
-  const line = error.position?.line;
+  const { file, error: problem } = error;
+  const line = problem.position?.line;
   return (
     <p
       role="alert"
       className="flex-none border-t border-screen-line px-4 py-2 font-mono text-[12.5px] text-error"
     >
       {line === undefined
-        ? error.text
-        : m.assembly_error_at_line({ line, message: error.text })}
+        ? m.assembly_error_in_file({ file, message: problem.text })
+        : m.assembly_error_at_file_line({ file, line, message: problem.text })}
     </p>
   );
 }
 
 export function EditorPanel() {
-  const { os } = useWorkbench();
-  const file = useSourceFile();
-  const stale = useIsStale();
+  const { os, tabs } = useWorkbench();
+  const { files } = useProject();
+  const { open, chosen } = useEditorTabs();
   const { pc } = useSnapshot();
-  const openFiles = [file.name, os.file];
   const pcFile = usePcFile();
+  const pcInProject = pcFile !== undefined && files.has(pcFile);
+
+  // The editor follows the PC into whichever file it moves to. A tab closed
+  // while the PC is in its file stays closed until the PC comes back.
+  useEffect(() => {
+    if (pcInProject) tabs.open(pcFile);
+  }, [tabs, pcFile, pcInProject]);
+
+  const fileTabs = open;
+  const allTabs = [...fileTabs, os.file];
   const pcTab =
-    pcFile !== undefined && openFiles.includes(pcFile) ? pcFile : undefined;
+    pcFile !== undefined && allTabs.includes(pcFile) ? pcFile : undefined;
+  const picked = chosen && allTabs.includes(chosen.file) ? chosen : null;
   // A tab the user picked stays open until the PC moves; then the editor
   // follows the PC, e.g. into the OS during a TRAP.
-  const [choice, setChoice] = useState<{ tab: string; pc: number }>();
-  const chosen = choice && openFiles.includes(choice.tab) ? choice : undefined;
   const tab =
-    chosen && (chosen.pc === pc || pcTab === undefined)
-      ? chosen.tab
-      : (pcTab ?? chosen?.tab ?? file.name);
+    picked && (picked.pc === pc || pcTab === undefined)
+      ? picked.file
+      : (pcTab ?? picked?.file ?? fileTabs.at(0) ?? os.file);
 
   return (
     <Screen className="focus-within:shadow-[inset_0_2px_8px_var(--screen-inset),0_0_0_3px_var(--bezel-focus)]">
       <ScreenTabs
         value={tab}
-        onValueChange={(value: string) => setChoice({ tab: value, pc })}
+        onValueChange={(value: string) => tabs.show(value)}
         className="flex min-h-0 flex-1 flex-col"
       >
-        <ScreenTabList>
-          <ScreenTab value={file.name}>
-            {file.name}
-            {stale && (
-              <span
-                className="size-1.5 rounded-full bg-phosphor"
-                title={m.editor_modified()}
+        <ScreenTabList className="overflow-x-auto">
+          {fileTabs.map((file) => (
+            <span key={file} className="flex flex-none items-center">
+              <ScreenTab value={file} title={file}>
+                {baseName(file)}
+              </ScreenTab>
+              <button
+                type="button"
+                aria-label={m.tab_close({ file })}
+                onClick={() => tabs.close(file)}
+                className="-mb-px grid size-5 place-items-center rounded-[3px] text-silk-3 outline-none hover:bg-tint/6 hover:text-silk focus-visible:ring-2 focus-visible:ring-phosphor/70"
               >
-                <span className="sr-only">{m.editor_modified()}</span>
-              </span>
-            )}
-          </ScreenTab>
-          <ScreenTab value={os.file}>
+                <XIcon aria-hidden className="size-3" />
+              </button>
+            </span>
+          ))}
+          <ScreenTab value={os.file} className="flex-none">
             {os.file}
             <span className="font-mono text-[10.5px] text-silk-2">
               {m.editor_read_only()}
@@ -100,9 +115,11 @@ export function EditorPanel() {
             <p className="p-4 text-xs text-silk-2">{m.editor_loading()}</p>
           }
         >
-          <ScreenTabPanel value={file.name} keepMounted>
-            <CodeView file={file.name} label={m.editor_program_label()} />
-          </ScreenTabPanel>
+          {fileTabs.map((file) => (
+            <ScreenTabPanel key={file} value={file} keepMounted>
+              <CodeView file={file} label={m.editor_file_label({ file })} />
+            </ScreenTabPanel>
+          ))}
           <ScreenTabPanel value={os.file} keepMounted>
             <CodeView file={os.file} label={m.editor_os_label()} />
           </ScreenTabPanel>

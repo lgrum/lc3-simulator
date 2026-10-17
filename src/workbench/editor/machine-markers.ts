@@ -155,9 +155,14 @@ export function machineMarkers(options: MarkerOptions): Extension {
       options.machine.subscribe(refresh),
       options.subscribeLines?.(refresh),
     ];
+    // A kept editor state can be older than the machine; catch up once the
+    // view exists, since a plugin can't dispatch while it is created.
+    queueMicrotask(() => {
+      if (unsubscribers.length) refresh();
+    });
     return {
       destroy: () => {
-        for (const unsubscribe of unsubscribers) unsubscribe?.();
+        for (const unsubscribe of unsubscribers.splice(0)) unsubscribe?.();
       },
     };
   });

@@ -102,6 +102,16 @@ export class BreakpointLines {
     }
   }
 
+  /** Removes the breakpoints in `file`, e.g. when it is deleted. */
+  removeFile(file: string): void {
+    this.capture();
+    for (const [id, location] of this.locations)
+      if (location.file === file) {
+        this.machine.breakpoints.remove(id);
+        this.locations.delete(id);
+      }
+  }
+
   /** Forgets every breakpoint, e.g. when another program is opened. */
   clear(): void {
     for (const point of this.machine.breakpoints.list())
