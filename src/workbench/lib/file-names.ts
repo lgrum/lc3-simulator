@@ -1,4 +1,4 @@
-import { moduleName } from "@/lib/assembler/linked-image";
+import { moduleName } from "@/lib/assembler/linker";
 
 /** A module name: label characters, starting with a letter or `_`. */
 const MODULE_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;

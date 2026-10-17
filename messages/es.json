@@ -122,7 +122,6 @@
   "condition_always": "siempre",
   "stops_every_hit": "en cada pasada",
   "stops_from_hit": "desde la pasada {count}",
-  "location_line": "línea {line}",
   "location_os_line": "línea {line} del SO",
   "trace": "Traza",
   "trace_caption": "Las instrucciones más recientes, de la última a la primera, con lo que cambió cada una",
@@ -162,5 +161,6 @@
   "file_delete": "Eliminar {file}",
   "file_delete_confirm": "¿Eliminar {file}? No se puede deshacer.",
   "file_replace_one_confirm": "¿Reemplazar {file} con el archivo que elegiste?",
-  "project_replace_confirm": "¿Reemplazar todos los archivos del proyecto? Tus cambios no están guardados en ningún otro sitio."
+  "project_replace_confirm": "¿Reemplazar todos los archivos del proyecto? Tus cambios no están guardados en ningún otro sitio.",
+  "location_file_line": "{file} línea {line}"
 }

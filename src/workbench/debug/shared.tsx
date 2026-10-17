@@ -7,6 +7,7 @@ import { OS_FILE } from "@/lib/simulator/os/load";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 
+import { baseName } from "../lib/file-names";
 import { hex } from "../lib/format";
 
 export const inputClass =
@@ -78,7 +79,10 @@ export function describeAddress(machine: MachineController, addr: number) {
       ? undefined
       : file === OS_FILE
         ? m.location_os_line({ line: sourceLine })
-        : m.location_line({ line: sourceLine });
+        : m.location_file_line({
+            file: baseName(file ?? ""),
+            line: sourceLine,
+          });
   return { address: hex(addr), label, line };
 }
 

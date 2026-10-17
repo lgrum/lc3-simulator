@@ -122,7 +122,6 @@
   "condition_always": "always",
   "stops_every_hit": "every hit",
   "stops_from_hit": "from hit {count}",
-  "location_line": "line {line}",
   "location_os_line": "OS line {line}",
   "trace": "Trace",
   "trace_caption": "The most recent instructions, newest first, with what each changed",
@@ -162,5 +161,6 @@
   "file_delete": "Delete {file}",
   "file_delete_confirm": "Delete {file}? This can't be undone.",
   "file_replace_one_confirm": "Replace {file} with the file you picked?",
-  "project_replace_confirm": "Replace all the files in the project? Your changes are not saved anywhere else."
+  "project_replace_confirm": "Replace all the files in the project? Your changes are not saved anywhere else.",
+  "location_file_line": "{file} line {line}"
 }

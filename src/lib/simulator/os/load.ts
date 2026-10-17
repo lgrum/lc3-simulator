@@ -1,7 +1,4 @@
-import { assemble } from "../../assembler/assembler";
-import { tokenize } from "../../assembler/lexer";
-import { programImage } from "../../assembler/linked-image";
-import { parse } from "../../assembler/parser";
+import { assembleSource } from "../../assembler/assemble-source";
 import type { LinkedImage } from "../../assembler/types";
 import source from "./lc3os.asm?raw";
 
@@ -11,6 +8,10 @@ export const OS_FILE = "lc3os.asm";
 let image: LinkedImage | undefined;
 /** The source is an asset; all machine words come from the project's assembler. */
 export function assembleOs(): LinkedImage {
-  image ??= programImage(assemble(parse(tokenize(source))), OS_FILE);
+  if (!image) {
+    const result = assembleSource(source, OS_FILE);
+    if (!result.ok) throw result.error;
+    image = result.image;
+  }
   return structuredClone(image);
 }

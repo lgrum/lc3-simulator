@@ -107,10 +107,14 @@ class Parser {
       throw this.error("No more tokens exist");
     }
 
+    const labelToken = this.peek();
     const label = this.parseOptionalLabel();
     this.skipNewlines();
 
     const line = this.peek().line;
+    if (label !== null && this.checkDirective(".EXTERNAL")) {
+      throw this.error(".EXTERNAL can't have a label", labelToken);
+    }
     const kind: StatementKind = this.checkToken("directive")
       ? { type: "directive", directive: this.parseDirective() }
       : { type: "instruction", instruction: this.parseInstruction() };
@@ -125,9 +129,25 @@ class Parser {
     return { line, label, kind };
   }
 
+  private checkDirective(name: string): boolean {
+    return (
+      this.checkToken("directive") && this.peek().lexeme.toUpperCase() === name
+    );
+  }
+
   private parseDirective(): Directive {
     const token = this.advance();
     switch (token.lexeme.toUpperCase()) {
+      case ".EXTERNAL": {
+        const name = this.peek();
+        if (name.type !== "identifier" || !isQualifiedName(name.lexeme)) {
+          throw this.error(
+            "Expected a qualified name like MATH-SQRT after .EXTERNAL",
+          );
+        }
+        this.advance();
+        return { type: "external", name: name.lexeme };
+      }
       case ".ORIG":
         return { type: "orig", operand: this.parseDirectiveOperand() };
       case ".FILL":
@@ -314,6 +334,9 @@ class Parser {
     if (token.type !== "identifier") {
       return null;
     }
+    if (isQualifiedName(token.lexeme)) {
+      throw this.error("Labels can't contain '-'", token);
+    }
 
     this.advance();
     if (this.checkToken("colon")) {
@@ -321,6 +344,20 @@ class Parser {
     }
     return token.lexeme;
   }
+}
+
+/** Whether a name refers to another module's label: `MODULE-LABEL`. */
+export function isQualifiedName(name: string): boolean {
+  return name.includes("-");
+}
+
+/** Splits `MODULE-LABEL` into its module and label. */
+export function splitQualifiedName(name: string): {
+  module: string;
+  label: string;
+} {
+  const dash = name.indexOf("-");
+  return { module: name.slice(0, dash), label: name.slice(dash + 1) };
 }
 
 export function parse(tokens: Array<Token>): Program {

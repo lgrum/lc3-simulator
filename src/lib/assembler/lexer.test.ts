@@ -67,4 +67,35 @@ describe("assembler lexer", () => {
       column: 19,
     });
   });
+
+  it("reads MODULE-LABEL as one identifier", () => {
+    expect(
+      tokenize(".EXTERNAL Trig-SIN\nPTR .FILL R1-x2\n").map(
+        ({ type, lexeme }) => [type, lexeme],
+      ),
+    ).toEqual([
+      ["directive", ".EXTERNAL"],
+      ["identifier", "Trig-SIN"],
+      ["newline", "\n"],
+      ["identifier", "PTR"],
+      ["directive", ".FILL"],
+      ["identifier", "R1-x2"],
+      ["newline", "\n"],
+      ["eof", ""],
+    ]);
+    expect(tokenize("xab-SIN\n")[0]).toMatchObject({
+      type: "identifier",
+      lexeme: "xab-SIN",
+    });
+  });
+
+  it("rejects a second '-' in a qualified name", () => {
+    expect(() => tokenize(".EXTERNAL A-B-C\n")).toThrow(
+      expect.objectContaining({
+        text: "A qualified name has exactly one '-'",
+        position: { line: 1, column: 11, endColumn: 16 },
+      }),
+    );
+    expect(() => tokenize("A-1\n")).toThrow("Unexpected character '-'");
+  });
 });

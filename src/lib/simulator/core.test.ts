@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { assemble } from "../assembler/assembler";
-import { tokenize } from "../assembler/lexer";
-import { parse } from "../assembler/parser";
+import { assembleSource } from "../assembler/assemble-source";
 import { Cpu } from "./cpu";
 import { Keyboard } from "./devices/keyboard";
 import { LC3 } from "./isa/lc3";
@@ -114,13 +112,11 @@ describe("swappable CPU and plain state", () => {
     expect(cpu.reg(0)).toBe(1);
   });
   it("maps source lines for blocks, strings and address wrap", () => {
-    const image = assemble(
-      parse(
-        tokenize(
-          '.ORIG xFFFF\n; comment\nBR TARGET\nTARGET .BLKW #2\n.STRINGZ "Hi"\n.END\n',
-        ),
-      ),
+    const result = assembleSource(
+      '.ORIG xFFFF\n; comment\nBR TARGET\nTARGET .BLKW #2\n.STRINGZ "Hi"\n.END\n',
     );
+    if (!result.ok) throw result.error;
+    const image = result.program;
     expect(image.origin).toBe(0xffff);
     expect(image.words).toHaveLength(6);
     expect(image.sourceMap).toEqual(

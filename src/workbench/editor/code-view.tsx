@@ -208,10 +208,13 @@ function extensionsFor(
     tabStops(),
     keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
     sourceSync(workbench, file),
-    assemblyDiagnostics(() => {
-      const { error } = assembly.getState();
-      return error?.file === file ? error.error : null;
-    }, assembly.subscribe),
+    assemblyDiagnostics(
+      () =>
+        assembly
+          .getState()
+          .diagnostics.filter((diagnostic) => diagnostic.file === file),
+      assembly.subscribe,
+    ),
   ];
 }
 

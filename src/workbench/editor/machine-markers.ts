@@ -9,9 +9,9 @@ import {
 } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { linter, setDiagnostics } from "@codemirror/lint";
-import type { Diagnostic } from "@codemirror/lint";
+import type { Diagnostic as EditorDiagnostic } from "@codemirror/lint";
 
-import type { AssemblyError } from "@/lib/assembler/assemble-source";
+import type { Diagnostic } from "@/lib/assembler/types";
 import type { MachineController } from "@/lib/simulator/controller";
 
 import { tracksPc } from "../actions";
@@ -182,9 +182,12 @@ export function machineMarkers(options: MarkerOptions): Extension {
   return [field, sync, breakpointGutter];
 }
 
-/** Converts an assembly error to a CodeMirror diagnostic in `doc`. */
-export function toDiagnostic(error: AssemblyError, doc: Text): Diagnostic {
-  const position = error.position;
+/** Converts an assembler diagnostic to a CodeMirror one in `doc`. */
+export function toDiagnostic(
+  diagnostic: Diagnostic,
+  doc: Text,
+): EditorDiagnostic {
+  const position = diagnostic.position;
   const line = doc.line(Math.min(Math.max(position?.line ?? 1, 1), doc.lines));
   const clamp = (column: number) =>
     Math.min(line.to, Math.max(line.from, line.from + column - 1));
@@ -195,20 +198,18 @@ export function toDiagnostic(error: AssemblyError, doc: Text): Diagnostic {
   return {
     from,
     to: Math.max(from, to),
-    severity: "error",
-    message: error.text,
+    severity: diagnostic.severity,
+    message: diagnostic.text,
   };
 }
 
-/** Shows the last assembly error inline, and refreshes on each assemble. */
+/** Shows a file's diagnostics inline, and refreshes on each assemble. */
 export function assemblyDiagnostics(
-  getError: () => AssemblyError | null,
+  getDiagnostics: () => ReadonlyArray<Diagnostic>,
   subscribe: (listener: () => void) => () => void,
 ): Extension {
-  const diagnosticsFor = (doc: Text) => {
-    const error = getError();
-    return error ? [toDiagnostic(error, doc)] : [];
-  };
+  const diagnosticsFor = (doc: Text) =>
+    getDiagnostics().map((diagnostic) => toDiagnostic(diagnostic, doc));
   // The linter covers the first render and later edits; each assemble
   // pushes its result right away.
   const source = linter((view) => diagnosticsFor(view.state.doc), {

@@ -69,7 +69,9 @@ export type Instruction =
 export type Directive =
   | { type: "orig" | "fill" | "blkw"; operand: DirectiveOperand }
   | { type: "end" }
-  | { type: "stringz"; value: string };
+  | { type: "stringz"; value: string }
+  /** `.EXTERNAL MODULE-LABEL`: a label of another module. */
+  | { type: "external"; name: string };
 
 export type StatementKind =
   | { type: "instruction"; instruction: Instruction }
@@ -117,3 +119,53 @@ export type LinkedImage = {
   sourceMap: Map<number, SourceLocation>;
   map: Array<LinkMapEntry>;
 };
+
+/** How bad a diagnostic is. Info notes don't stop a build. */
+export type Severity = "error" | "warning" | "info";
+
+export type Diagnostic = {
+  /** The project file, or null for whole-program problems. */
+  file: string | null;
+  position: SourcePosition | null;
+  severity: Severity;
+  text: string;
+};
+
+/** A word the linker patches once it knows where modules go. */
+export type Relocation =
+  /** `.FILL LOCAL_LABEL`: add the module's base address. */
+  | { kind: "local-abs16"; offset: number }
+  | {
+      kind: "abs16" | "pc9" | "pc11";
+      offset: number;
+      /** The qualified name as written, e.g. `TRIG-SIN`. */
+      external: string;
+      line: number;
+    };
+
+/** One file, assembled as if it started at address 0. */
+export type ObjectModule = {
+  /** The module name, as used in prefixes: the file's base name. */
+  name: string;
+  /** "local" | `group:${number}` | `admin:${userId}`; phase 1 uses "local". */
+  namespace: string;
+  /** The project path, for diagnostics and source maps. */
+  file: string;
+  /** The .ORIG operand, if any. Only the entry file's is used. */
+  origin: number | null;
+  /** Externals are encoded as 0. */
+  words: Array<number>;
+  /** Label -> offset. */
+  symbols: Map<string, number>;
+  /** Qualified name as written -> where it points and the .EXTERNAL line. */
+  externals: Map<string, { module: string; label: string; line: number }>;
+  relocations: Array<Relocation>;
+  /** Offset -> line. */
+  sourceMap: Map<number, number>;
+  /** Info notes, e.g. an ignored .ORIG. */
+  diagnostics: Array<Diagnostic>;
+};
+
+export type LinkResult =
+  | { ok: true; image: LinkedImage; diagnostics: Array<Diagnostic> }
+  | { ok: false; diagnostics: Array<Diagnostic> };

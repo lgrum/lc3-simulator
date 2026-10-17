@@ -1,10 +1,14 @@
+import { OS_MODULE, baseName, moduleName } from "./linker";
+import { isQualifiedName, splitQualifiedName } from "./parser";
 import type {
-  AssemblyResult,
+  Diagnostic,
   Directive,
   DirectiveOperand,
   Instruction,
+  ObjectModule,
   Offset,
   Program,
+  Relocation,
   SourcePosition,
   Statement,
 } from "./types";
@@ -30,26 +34,52 @@ export class AssemblerError extends Error {
   }
 }
 
+export type AssembleOptions = {
+  /** The project path, e.g. `lib/trig.asm`. Its base name names the module. */
+  file?: string;
+  namespace?: string;
+  /** Whether this is the entry file, whose .ORIG sets the load address. */
+  entry?: boolean;
+};
+
+/**
+ * Assembles one file as if it started at address 0. PC-relative offsets
+ * inside the file don't change when the linker moves it; `.FILL` of a local
+ * label is left as a relocation.
+ */
 class Assembler {
-  private address = 0;
+  private origin: number | null = null;
   private readonly symbols = new Map<string, number>();
   private readonly words: Array<number> = [];
   private pc = 0;
   private readonly sourceMap = new Map<number, number>();
+  private readonly relocations: Array<Relocation> = [];
+  private readonly diagnostics: Array<Diagnostic> = [];
+  private readonly externals: ObjectModule["externals"] = new Map();
   /** The line of the statement being processed, for error positions. */
   private line: number | undefined;
 
-  constructor(private readonly statements: Array<Statement>) {}
+  constructor(
+    private readonly statements: Array<Statement>,
+    private readonly options: Required<AssembleOptions>,
+  ) {}
 
-  assemble(): AssemblyResult {
+  assemble(): ObjectModule {
     this.init();
     this.labelParse();
+    this.collectExternals();
     this.encode();
     return {
-      origin: this.address,
+      name: moduleName(this.options.file),
+      namespace: this.options.namespace,
+      file: this.options.file,
+      origin: this.origin,
       words: this.words,
       symbols: this.symbols,
+      externals: this.externals,
+      relocations: this.relocations,
       sourceMap: this.sourceMap,
+      diagnostics: this.diagnostics,
     };
   }
 
@@ -57,10 +87,23 @@ class Assembler {
     return new AssemblerError(text, this.line);
   }
 
+  /** Reads the optional .ORIG, which must come first when present. */
   private init(): void {
-    const statement = this.statements.at(0);
-    if (!statement) {
+    if (this.statements.length === 0) {
       throw this.error("Expected statements, found none");
+    }
+    // .EXTERNAL lines emit nothing and may come before .ORIG.
+    const statement = this.statements.find(
+      (s) =>
+        s.kind.type !== "directive" || s.kind.directive.type !== "external",
+    );
+    const origs = this.statements.filter(
+      (s) => s.kind.type === "directive" && s.kind.directive.type === "orig",
+    );
+    if (origs.length === 0 || !statement) return;
+    if (origs[0] !== statement) {
+      this.line = origs[0].line;
+      throw this.error(".ORIG must be the first statement");
     }
     this.line = statement.line;
     if (statement.label !== null) {
@@ -68,27 +111,27 @@ class Assembler {
     }
     if (
       statement.kind.type !== "directive" ||
-      statement.kind.directive.type !== "orig"
+      statement.kind.directive.type !== "orig" ||
+      statement.kind.directive.operand.type !== "immediate"
     ) {
-      throw this.error("Expected .ORIG as first statement");
-    }
-    if (statement.kind.directive.operand.type !== "immediate") {
       throw this.error(".ORIG must have a number literal operand");
     }
-    const secondOrig = this.statements
-      .slice(1)
-      .find(
-        (s) => s.kind.type === "directive" && s.kind.directive.type === "orig",
-      );
-    if (secondOrig) {
-      this.line = secondOrig.line;
+    if (origs.length > 1) {
+      this.line = origs[1].line;
       throw this.error("Multiple .ORIG blocks are not supported");
     }
-    this.address = toWord(statement.kind.directive.operand.value);
+    this.origin = toWord(statement.kind.directive.operand.value);
+    if (!this.options.entry)
+      this.diagnostics.push({
+        file: this.options.file,
+        position: { line: statement.line },
+        severity: "info",
+        text: ".ORIG is ignored in modules; the linker places this code",
+      });
   }
 
   private labelParse(): void {
-    let pc = this.address;
+    let pc = 0;
     for (const statement of this.statements) {
       this.line = statement.line;
       if (statement.label !== null) {
@@ -100,8 +143,57 @@ class Assembler {
     }
   }
 
+  /**
+   * Reads every `.EXTERNAL`, in source order. Repeats have no effect. A file
+   * can't import its own labels, a label it defines, or the OS's labels.
+   */
+  private collectExternals(): void {
+    const ownModule = moduleName(this.options.file);
+    for (const statement of this.statements) {
+      if (
+        statement.kind.type !== "directive" ||
+        statement.kind.directive.type !== "external"
+      )
+        continue;
+      this.line = statement.line;
+      const { name } = statement.kind.directive;
+      if (this.externals.has(name)) continue;
+      const { module, label } = splitQualifiedName(name);
+      if (module.toLowerCase() === ownModule.toLowerCase())
+        throw this.error(
+          `${baseName(this.options.file)} can't import its own labels; use ${label}`,
+        );
+      if (module.toLowerCase() === OS_MODULE)
+        throw this.error(
+          `Programs can't import labels of the OS (${OS_MODULE}.asm); call it with TRAP`,
+        );
+      if (this.symbols.has(label))
+        throw this.error(
+          `${label} is defined in this file, so .EXTERNAL ${name} can't import it`,
+        );
+      this.externals.set(name, { module, label, line: statement.line });
+    }
+  }
+
+  /** Whether `name` matches a `.EXTERNAL` of this file. */
+  private isDeclared(name: string): boolean {
+    const wanted = splitQualifiedName(name);
+    for (const external of this.externals.values())
+      if (
+        external.module.toLowerCase() === wanted.module.toLowerCase() &&
+        external.label === wanted.label
+      )
+        return true;
+    return false;
+  }
+
+  private requireDeclared(name: string): void {
+    if (!this.isDeclared(name))
+      throw this.error(`${name} is used without .EXTERNAL ${name}`);
+  }
+
   private encode(): void {
-    this.pc = this.address;
+    this.pc = 0;
     for (const statement of this.statements) {
       this.line = statement.line;
       const size = statementSize(statement);
@@ -133,6 +225,25 @@ class Assembler {
         return;
       }
       case "fill":
+        if (
+          directive.operand.type === "label" &&
+          isQualifiedName(directive.operand.label)
+        ) {
+          this.requireDeclared(directive.operand.label);
+          this.relocations.push({
+            kind: "abs16",
+            offset: this.words.length,
+            external: directive.operand.label,
+            line: this.line ?? 0,
+          });
+          this.words.push(0);
+          return;
+        }
+        if (directive.operand.type === "label")
+          this.relocations.push({
+            kind: "local-abs16",
+            offset: this.words.length,
+          });
         this.words.push(
           directive.operand.type === "immediate"
             ? toWord(directive.operand.value)
@@ -146,6 +257,7 @@ class Assembler {
         this.words.push(0);
         return;
       case "end":
+      case "external":
         return;
     }
   }
@@ -247,11 +359,27 @@ class Assembler {
       (opcode << 12) |
       (dr << 9) |
       (base << 6) |
-      this.encodeOffset(instruction.offset_6, 6)
+      this.encodeOffset(instruction.offset_6, 6, `an ${name} offset`)
     );
   }
 
-  private encodeOffset(offset: Offset, bits: number): number {
+  /**
+   * A PC-relative offset, or a base offset for LDR and STR (6 bits). An
+   * imported label is left to the linker, which checks that it reaches.
+   */
+  private encodeOffset(offset: Offset, bits: number, use = ""): number {
+    if (offset.type === "label" && isQualifiedName(offset.label)) {
+      if (bits === 6)
+        throw this.error(`External labels can't be used as ${use}`);
+      this.requireDeclared(offset.label);
+      this.relocations.push({
+        kind: bits === 9 ? "pc9" : "pc11",
+        offset: this.words.length,
+        external: offset.label,
+        line: this.line ?? 0,
+      });
+      return 0;
+    }
     const value =
       offset.type === "immediate"
         ? offset.value
@@ -259,15 +387,17 @@ class Assembler {
     return this.encodeSigned(value, bits);
   }
 
+  /** A label's offset from the start of the file, as before relocation. */
   private encodeTrapVector(offset: Offset): number {
+    if (offset.type === "label" && isQualifiedName(offset.label))
+      throw this.error("External labels can't be used in TRAP");
     const value =
-      offset.type === "immediate"
-        ? offset.value
-        : toWord(this.symbol(offset.label) - this.address);
+      offset.type === "immediate" ? offset.value : this.symbol(offset.label);
     return this.encodeUnsigned(value, 8);
   }
 
   private symbol(label: string, directive?: string): number {
+    if (isQualifiedName(label)) this.requireDeclared(label);
     const value = this.symbols.get(label);
     if (value === undefined) {
       if (directive === ".FILL") {
@@ -337,12 +467,25 @@ function statementSize(statement: Statement): number {
       return Array.from(directive.value).length + 1;
     case "orig":
     case "end":
+    case "external":
       return 0;
     case "fill":
       return 1;
   }
 }
 
-export function assemble(program: Program): AssemblyResult {
-  return new Assembler(program.statements).assemble();
+/** Assembles one file into a relocatable module; throws its first error. */
+export function assemble(
+  program: Program,
+  {
+    file = "main.asm",
+    namespace = "local",
+    entry = true,
+  }: AssembleOptions = {},
+): ObjectModule {
+  return new Assembler(program.statements, {
+    file,
+    namespace,
+    entry,
+  }).assemble();
 }

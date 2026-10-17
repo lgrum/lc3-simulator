@@ -234,4 +234,32 @@ describe("assembler parser", () => {
       "Invalid decimal literal",
     );
   });
+
+  it("parses .EXTERNAL with one qualified name", () => {
+    expect(parseSource(".external MATH-SQRT\n").statements).toEqual([
+      {
+        line: 1,
+        label: null,
+        kind: {
+          type: "directive",
+          directive: { type: "external", name: "MATH-SQRT" },
+        },
+      },
+    ]);
+  });
+
+  it("rejects labels on .EXTERNAL, bad operands and labels with '-'", () => {
+    expect(() => parseSource("HERE .EXTERNAL MATH-SQRT\n")).toThrow(
+      ".EXTERNAL can't have a label",
+    );
+    expect(() => parseSource(".EXTERNAL SQRT\n")).toThrow(
+      "Expected a qualified name like MATH-SQRT after .EXTERNAL",
+    );
+    expect(() => parseSource("MATH-SQRT ADD R0, R0, #1\n")).toThrow(
+      expect.objectContaining({
+        text: "Labels can't contain '-'",
+        position: { line: 1, column: 1, endColumn: 10 },
+      }),
+    );
+  });
 });

@@ -1,6 +1,10 @@
-import { assembleSource } from "@/lib/assembler/assemble-source";
-import type { AssemblyError } from "@/lib/assembler/assemble-source";
-import type { LinkedImage } from "@/lib/assembler/types";
+import { assembleModule, diagnosticOf } from "@/lib/assembler/assemble-source";
+import { link } from "@/lib/assembler/linker";
+import type {
+  Diagnostic,
+  LinkedImage,
+  ObjectModule,
+} from "@/lib/assembler/types";
 import type { MachineController } from "@/lib/simulator/controller";
 
 import { BreakpointLines } from "./breakpoints";
@@ -14,8 +18,8 @@ export type Assembly = {
   image: LinkedImage | null;
   /** One line map per file of the loaded image. */
   lines: ReadonlyMap<string, LineMap>;
-  /** The error from the last assemble, if it failed, and its file. */
-  error: { file: string; error: AssemblyError } | null;
+  /** Errors, warnings and notes from the last assemble. */
+  diagnostics: ReadonlyArray<Diagnostic>;
   /** The project revision that was last assembled, to tell when it is stale. */
   revision: number | null;
 };
@@ -23,13 +27,13 @@ export type Assembly = {
 const INITIAL: Assembly = {
   image: null,
   lines: new Map(),
-  error: null,
+  diagnostics: [],
   revision: null,
 };
 
 /**
- * Assembles the project from its entry file and loads it into the machine.
- * Compatible with useSyncExternalStore.
+ * Assembles every file of the project, links from the entry file and loads
+ * the program into the machine. Compatible with useSyncExternalStore.
  */
 export class AssemblyStore {
   private state = INITIAL;
@@ -67,27 +71,44 @@ export class AssemblyStore {
     return this.state.revision !== this.project.getProject().revision;
   }
 
-  /** Assembles the project and loads it. Returns whether it worked. */
+  /**
+   * Assembles every file, links from the entry file and loads the image.
+   * Each broken file reports its first error, and linking runs only when all
+   * files assemble. Returns whether it worked; on failure the machine keeps
+   * the last loaded program.
+   */
   assemble(): boolean {
     const { entry, files, revision } = this.project.getProject();
-    const result = assembleSource(files.get(entry) ?? "", entry);
-    if (!result.ok) {
+    const modules: Array<ObjectModule> = [];
+    const errors: Array<Diagnostic> = [];
+    for (const [file, text] of files) {
+      const assembled = assembleModule(text, { file, entry: file === entry });
+      if (assembled.ok) modules.push(assembled.module);
+      else errors.push(diagnosticOf(assembled.error, file));
+    }
+    if (errors.length) {
+      this.publish({ ...this.state, diagnostics: errors, revision });
+      return false;
+    }
+    const linked = link(modules, { entry });
+    if (!linked.ok) {
       this.publish({
         ...this.state,
-        error: { file: entry, error: result.error },
+        diagnostics: linked.diagnostics,
         revision,
       });
       return false;
     }
+    const { image, diagnostics } = linked;
     this.breakpoints.capture();
     // Publish first, so machine subscribers see the new line map on load.
     this.publish({
-      image: result.image,
-      lines: createLineMaps(result.image),
-      error: null,
+      image,
+      lines: createLineMaps(image),
+      diagnostics,
       revision,
     });
-    this.machine.load(result.image);
+    this.machine.load(image);
     this.breakpoints.relink();
     this.changes.rebase();
     return true;

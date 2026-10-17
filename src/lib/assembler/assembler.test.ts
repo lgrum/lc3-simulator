@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 
+import { assembleSource as assembleProgram } from "./assemble-source";
 import { assemble, AssemblerError } from "./assembler";
-import { tokenize } from "./lexer";
-import { parse } from "./parser";
 
+/** Assembles and links one file; throws its error like the assembler. */
 function assembleSource(source: string) {
-  return assemble(parse(tokenize(source)));
+  const result = assembleProgram(source);
+  if (!result.ok) throw result.error;
+  return result.program;
 }
 
 describe("assembler", () => {
@@ -103,7 +105,7 @@ describe("assembler", () => {
       [".ORIG x3000\nHALT\n.ORIG x4000\n.END\n", "Multiple .ORIG", 3],
       [".ORIG x3000\nHALT\n.BLKW #-1\n.END\n", ".BLKW can't", 3],
       [".ORIG x3000\n\nADD R0, R0, #99\n.END\n", "Immediate value 99", 3],
-      ["; header\nRET\n", "Expected .ORIG", 2],
+      ["; header\nRET\n.ORIG x3000\n", ".ORIG must be the first", 3],
     ];
     for (const [source, message, line] of cases) {
       expect(() => assembleSource(source)).toThrow(
@@ -120,8 +122,8 @@ describe("assembler", () => {
 
   it("reports missing origin, unresolved labels, and invalid block sizes", () => {
     expect(() => assemble({ statements: [] })).toThrow(AssemblerError);
-    expect(() => assembleSource("RET\n")).toThrow(
-      "Expected .ORIG as first statement",
+    expect(() => assembleSource("START .ORIG x3000\nRET\n")).toThrow(
+      ".ORIG cannot have a label",
     );
     expect(() => assembleSource(".ORIG x3000\nBR MISSING\n.END\n")).toThrow(
       "Label MISSING doesn't exist",

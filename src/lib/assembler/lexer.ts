@@ -96,6 +96,34 @@ export class Lexer {
     return this.source.at(this.current) ?? null;
   }
 
+  private peekNext(): number | null {
+    return this.source.at(this.current + 1) ?? null;
+  }
+
+  /** Whether a `-` and the start of a label come next: `MODULE-LABEL`. */
+  private atQualifier(): boolean {
+    return this.peek() === asciiByte("-") && isIdentifierStart(this.peekNext());
+  }
+
+  /**
+   * Scans `-LABEL` after a module name, so `MATH-SQRT` is one identifier. A
+   * second `-` is an error.
+   */
+  private scanQualifiedRest(): Token {
+    this.advance();
+    while (isIdentifierContinue(this.peek())) {
+      this.advance();
+    }
+    if (this.atQualifier()) {
+      this.advance();
+      while (isIdentifierContinue(this.peek())) {
+        this.advance();
+      }
+      throw this.error("A qualified name has exactly one '-'");
+    }
+    return this.makeToken("identifier");
+  }
+
   private advance(): number | null {
     if (this.isAtEnd()) {
       return null;
@@ -237,6 +265,11 @@ export class Lexer {
       this.advance();
     }
 
+    // A module named like a number, e.g. `xab-SIN`.
+    if (this.atQualifier()) {
+      return this.scanQualifiedRest();
+    }
+
     if (isIdentifierContinue(this.peek())) {
       while (isIdentifierContinue(this.peek())) {
         this.advance();
@@ -262,6 +295,10 @@ export class Lexer {
   private scanIdentifierOrKeyword(): Token {
     while (isIdentifierContinue(this.peek())) {
       this.advance();
+    }
+
+    if (this.atQualifier()) {
+      return this.scanQualifiedRest();
     }
 
     const text = this.lexeme();

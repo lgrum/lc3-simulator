@@ -38,18 +38,21 @@ function usePcFile(): string | undefined {
 }
 
 function AssemblyError() {
-  const { error } = useAssembly();
+  const { diagnostics } = useAssembly();
+  const error = diagnostics.find(({ severity }) => severity === "error");
   if (!error) return null;
-  const { file, error: problem } = error;
-  const line = problem.position?.line;
+  const { file, position, text } = error;
+  const line = position?.line;
   return (
     <p
       role="alert"
       className="flex-none border-t border-screen-line px-4 py-2 font-mono text-[12.5px] text-error"
     >
-      {line === undefined
-        ? m.assembly_error_in_file({ file, message: problem.text })
-        : m.assembly_error_at_file_line({ file, line, message: problem.text })}
+      {file === null
+        ? text
+        : line === undefined
+          ? m.assembly_error_in_file({ file, message: text })
+          : m.assembly_error_at_file_line({ file, line, message: text })}
     </p>
   );
 }

@@ -1,12 +1,16 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { assemble } from "../assembler/assembler";
-import { tokenize } from "../assembler/lexer";
-import { programImage } from "../assembler/linked-image";
-import { parse } from "../assembler/parser";
+import { assembleSource } from "../assembler/assemble-source";
 import type { LinkedImage } from "../assembler/types";
 import { MachineController } from "./controller";
 import type { ControllerOptions, Scheduler } from "./controller";
 import { LC3 } from "./isa/lc3";
+
+/** Assembles a whole program in main.asm, ready to load. */
+function imageOf(source: string): LinkedImage {
+  const result = assembleSource(source, "main.asm");
+  if (!result.ok) throw result.error;
+  return result.image;
+}
 
 /** An image with one segment and no symbols or source lines. */
 function rawImage(origin: number, words: Array<number>): LinkedImage {
@@ -34,12 +38,7 @@ function fixture(source: string, options: ControllerOptions = {}) {
     },
   };
   const machine = new MachineController({ ...options, scheduler });
-  machine.load(
-    programImage(
-      assemble(parse(tokenize(".ORIG x3000\n" + source + "\n.END\n"))),
-      "main.asm",
-    ),
-  );
+  machine.load(imageOf(".ORIG x3000\n" + source + "\n.END\n"));
   const tick = () => {
     const index = jobs.findIndex((job) => job.active);
     if (index < 0) return false;
@@ -465,12 +464,7 @@ describe("controller, devices and real OS", () => {
         },
       },
     });
-    machine.load(
-      programImage(
-        assemble(parse(tokenize(".ORIG x3000\nBR #-1\n.END\n"))),
-        "main.asm",
-      ),
-    );
+    machine.load(imageOf(".ORIG x3000\nBR #-1\n.END\n"));
     let notifications = 0;
     machine.subscribe(() => notifications++);
     machine.run();
