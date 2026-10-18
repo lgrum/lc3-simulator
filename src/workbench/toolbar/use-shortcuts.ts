@@ -36,7 +36,7 @@ export const SHORTCUTS: ReadonlyArray<Shortcut> = [
         workbench.cursor.line,
       ),
   },
-  { key: "b", ctrl: true, run: ({ assembly }) => assembly.assemble() },
+  { key: "b", ctrl: true, run: ({ assembly }) => void assembly.build() },
 ];
 
 export function useShortcuts(): void {

@@ -272,5 +272,9 @@
   "admin_group_modules": "Grupo {number} · {name}",
   "admin_group_no_modules": "Este grupo aún no ha publicado nada.",
   "admin_pick_version": "Elige una versión para leer su código.",
-  "admin_source_caption": "{module}.asm · v{version}"
+  "admin_source_caption": "{module}.asm · v{version}",
+  "file_remote_hint": "Módulo publicado en el servidor, de solo lectura. No se guarda con tu proyecto.",
+  "stub_missing": "Simular faltantes",
+  "stub_missing_hint": "Simular módulos faltantes: las llamadas a etiquetas que nadie ha publicado aún solo retornan (RET), con un aviso por cada una",
+  "link_map_stubs": "Stubs RET"
 }

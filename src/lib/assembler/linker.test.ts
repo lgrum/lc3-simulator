@@ -461,3 +461,256 @@ describe("memory limits", () => {
     expect(overlappingSegments([a, at(0x3000, 0, "empty.asm")])).toEqual([]);
   });
 });
+
+describe("stubs for missing modules", () => {
+  const CALLER = `        .ORIG x3000
+        .EXTERNAL MATH-SQRT
+        .EXTERNAL TRIG-COS
+        .EXTERNAL TRIG-SIN
+        LD R5, P_SQRT
+        JSRR R5
+        LD R5, P_COS
+        JSRR R5
+        LD R5, P_SIN
+        JSRR R5
+        HALT
+P_SQRT  .FILL MATH-SQRT
+P_COS   .FILL TRIG-COS
+P_SIN   .FILL TRIG-SIN
+        .END
+`;
+  // TRIG has SIN but no COS, and also wants MATH-SQRT.
+  const TRIG_PARTIAL = `        .EXTERNAL MATH-SQRT
+SIN     ADD R0, R0, #1
+        RET
+P       .FILL MATH-SQRT
+`;
+  const files = () => [
+    moduleOf("main.asm", CALLER, true),
+    moduleOf("trig.asm", TRIG_PARTIAL),
+  ];
+
+  it("are link errors unless turned on", () => {
+    const result = link(files(), { entry: "main.asm" });
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics.map((d) => d.text)).toEqual([
+      "No module named MATH in this program",
+      "trig.asm has no label COS",
+      "No module named MATH in this program",
+    ]);
+  });
+
+  it("place one RET per missing label after the last module, with a warning each", () => {
+    const result = link(files(), { entry: "main.asm", stubMissing: true });
+    if (!result.ok) throw new Error(result.diagnostics[0].text);
+    const { image, diagnostics } = result;
+    // main is x3000-x3009, trig x300A-x300C, then the stubs.
+    expect(image.segments.at(-1)).toEqual({
+      origin: 0x300d,
+      words: [0xc1c0, 0xc1c0],
+      file: "(stubs)",
+    });
+    expect(image.symbols.get("MATH-SQRT")).toBe(0x300d);
+    expect(image.symbols.get("TRIG-COS")).toBe(0x300e);
+    expect(image.map.at(-1)).toMatchObject({
+      file: "(stubs)",
+      start: 0x300d,
+      end: 0x300e,
+    });
+    expect(diagnostics).toEqual([
+      {
+        file: "main.asm",
+        position: { line: 2 },
+        severity: "warning",
+        text: "MATH-SQRT is missing: calls to it return at once (RET stub at x300D)",
+      },
+      {
+        file: "main.asm",
+        position: { line: 3 },
+        severity: "warning",
+        text: "TRIG-COS is missing: calls to it return at once (RET stub at x300E)",
+      },
+    ]);
+    // Both importers of MATH-SQRT share the stub.
+    expect(image.segments[1].words.at(-1)).toBe(0x300d);
+  });
+
+  it("make calls to missing modules return", () => {
+    const result = link(files(), { entry: "main.asm", stubMissing: true });
+    if (!result.ok) throw new Error(result.diagnostics[0].text);
+    const machine = createMachineController();
+    machine.load(result.image);
+    machine.writeRegister("R0", 4);
+    for (let i = 0; i < 100 && machine.getSnapshot().pc !== 0x3006; i++)
+      machine.stepInto();
+    // SQRT and COS returned without doing anything; SIN added one.
+    expect(machine.getSnapshot().pc).toBe(0x3006);
+    expect(machine.getSnapshot().regs[0]).toBe(5);
+  });
+
+  it("still refuse imports from the entry file", () => {
+    const result = link(
+      [
+        moduleOf("main.asm", ".EXTERNAL A-P\nX HALT\n", true),
+        moduleOf("a.asm", ".EXTERNAL MAIN-X\nP .FILL MAIN-X\n"),
+      ],
+      { entry: "main.asm", stubMissing: true },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics.map((d) => d.text)).toContain(
+      "Modules can't import from the entry file main.asm",
+    );
+  });
+
+  it("count toward the memory limit", () => {
+    const result = link(
+      [moduleOf("main.asm", CALLER.replace("x3000", "xFDF6"), true)],
+      { entry: "main.asm", stubMissing: true },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics.at(-1)?.text).toMatch(/doesn't fit/);
+  });
+});
+
+describe("namespaces", () => {
+  /** Assembles a file as one namespace's module. */
+  function nsModule(
+    file: string,
+    source: string,
+    namespace: string,
+    name?: string,
+    entry = false,
+  ): ObjectModule {
+    const result = assembleModule(source, { file, namespace, name, entry });
+    if (!result.ok) throw result.error;
+    return result.module;
+  }
+
+  const ADMIN = "admin:a1";
+  /** Calls two groups' SIN through .FILL and JSRR. */
+  const CALC = `        .EXTERNAL G7_TRIG-SIN
+        .EXTERNAL G3_TRIG-SIN
+        LD R5, P7
+        JSRR R5
+        LD R5, P3
+        JSRR R5
+        HALT
+P7      .FILL G7_TRIG-SIN
+P3      .FILL G3_TRIG-SIN
+`;
+  /** Group 7's trig, which uses group 7's helpers. */
+  const TRIG7 = `        .EXTERNAL HELPERS-TWICE
+SIN     ST R7, SAVE
+        LD R5, PTR
+        JSRR R5
+        LD R7, SAVE
+        RET
+PTR     .FILL HELPERS-TWICE
+SAVE    .BLKW #1
+`;
+  const HELPERS7 = "TWICE   ADD R0, R0, R0\n        RET\n";
+  const TRIG3 = "SIN     ADD R0, R0, #1\n        RET\n";
+
+  const modules = () => [
+    nsModule("main.asm", CALC, ADMIN, "main", true),
+    nsModule("lib/g7_trig.asm", TRIG7, "group:7", "trig"),
+    nsModule("lib/g7_helpers.asm", HELPERS7, "group:7", "helpers"),
+    nsModule("lib/g3_trig.asm", TRIG3, "group:3", "trig"),
+  ];
+
+  it("resolves an admin's g<n>_ names to group modules", () => {
+    const result = link(modules(), { entry: "main.asm" });
+    if (!result.ok) throw new Error(result.diagnostics[0].text);
+    expect(result.image.map.map((entry) => entry.file)).toEqual([
+      "main.asm",
+      "lib/g7_trig.asm",
+      "lib/g3_trig.asm",
+      "lib/g7_helpers.asm",
+    ]);
+    // Group modules show by the name the admin's project gives them.
+    expect(result.image.symbols.has("G7_TRIG-SIN")).toBe(true);
+    expect(result.image.symbols.has("G3_TRIG-SIN")).toBe(true);
+    expect(result.image.symbols.has("G7_HELPERS-TWICE")).toBe(true);
+
+    const machine = createMachineController();
+    machine.load(result.image);
+    machine.writeRegister("R0", 5);
+    // Up to the HALT, after both calls.
+    for (let i = 0; i < 200 && machine.getSnapshot().pc !== 0x3004; i++)
+      machine.stepInto();
+    // Group 7 doubles, then group 3 adds one.
+    expect(machine.getSnapshot().regs[0]).toBe(11);
+  });
+
+  it("resolves a group module's imports in its group's namespace", () => {
+    const withOtherHelpers = [
+      ...modules().filter((m) => m.file !== "lib/g7_helpers.asm"),
+      // Group 3's helpers must not satisfy group 7's import.
+      nsModule("lib/g3_helpers.asm", HELPERS7, "group:3", "helpers"),
+    ];
+    const result = link(withOtherHelpers, { entry: "main.asm" });
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics).toContainEqual({
+      file: "lib/g7_trig.asm",
+      position: { line: 1 },
+      severity: "error",
+      text: "No module named HELPERS in this program",
+    });
+  });
+
+  it("uses a local override in the group's namespace", () => {
+    const local = nsModule(
+      "work/g7_trig.asm",
+      TRIG7.replace("ST R7, SAVE", "ST R7, SAVE ; fixed"),
+      "group:7",
+      "trig",
+    );
+    const result = link(
+      [...modules().filter((m) => m.file !== "lib/g7_trig.asm"), local],
+      { entry: "main.asm" },
+    );
+    if (!result.ok) throw new Error(result.diagnostics[0].text);
+    expect(result.image.map.map((entry) => entry.file)).toContain(
+      "work/g7_trig.asm",
+    );
+    expect(result.image.symbols.has("G7_TRIG-SIN")).toBe(true);
+  });
+
+  it("never resolves another admin's modules", () => {
+    const result = link(
+      [
+        nsModule(
+          "main.asm",
+          ".EXTERNAL CALC-RUN\nLD R5, P\nJSRR R5\nHALT\nP .FILL CALC-RUN\n",
+          ADMIN,
+          "main",
+          true,
+        ),
+        nsModule("lib/calc.asm", "RUN RET\n", "admin:a2", "calc"),
+      ],
+      { entry: "main.asm" },
+    );
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        text: "No module named CALC in this program",
+      }),
+    );
+  });
+
+  it("reads g<n>_ names as group modules only in admin builds", () => {
+    const result = link(
+      [
+        nsModule(
+          "main.asm",
+          ".EXTERNAL G7_TRIG-SIN\nLD R5, P\nJSRR R5\nHALT\nP .FILL G7_TRIG-SIN\n",
+          "group:3",
+          "main",
+          true,
+        ),
+        nsModule("lib/g7_trig.asm", TRIG3, "group:7", "trig"),
+      ],
+      { entry: "main.asm" },
+    );
+    expect(result.ok).toBe(false);
+  });
+});

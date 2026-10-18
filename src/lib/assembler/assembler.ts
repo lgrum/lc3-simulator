@@ -38,6 +38,11 @@ export type AssembleOptions = {
   /** The project path, e.g. `lib/trig.asm`. Its base name names the module. */
   file?: string;
   namespace?: string;
+  /**
+   * The module's name in its namespace, when it isn't the file's base name:
+   * group 7's `trig` is `lib/g7_trig.asm` in an admin's project.
+   */
+  name?: string;
   /** Whether this is the entry file, whose .ORIG sets the load address. */
   entry?: boolean;
 };
@@ -70,7 +75,7 @@ class Assembler {
     this.collectExternals();
     this.encode();
     return {
-      name: moduleName(this.options.file),
+      name: this.options.name,
       namespace: this.options.namespace,
       file: this.options.file,
       origin: this.origin,
@@ -148,7 +153,7 @@ class Assembler {
    * can't import its own labels, a label it defines, or the OS's labels.
    */
   private collectExternals(): void {
-    const ownModule = moduleName(this.options.file);
+    const ownModule = this.options.name;
     for (const statement of this.statements) {
       if (
         statement.kind.type !== "directive" ||
@@ -480,12 +485,14 @@ export function assemble(
   {
     file = "main.asm",
     namespace = "local",
+    name = moduleName(file),
     entry = true,
   }: AssembleOptions = {},
 ): ObjectModule {
   return new Assembler(program.statements, {
     file,
     namespace,
+    name,
     entry,
   }).assemble();
 }

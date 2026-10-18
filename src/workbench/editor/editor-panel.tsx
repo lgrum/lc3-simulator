@@ -60,7 +60,7 @@ function AssemblyError() {
 
 export function EditorPanel() {
   const { os, tabs } = useWorkbench();
-  const { files } = useProject();
+  const { files, remote } = useProject();
   const { open, chosen } = useEditorTabs();
   const { pc } = useSnapshot();
   const pcFile = usePcFile();
@@ -97,6 +97,11 @@ export function EditorPanel() {
             <span key={file} className="flex flex-none items-center">
               <ScreenTab value={file} title={file}>
                 {baseName(file)}
+                {remote.has(file) && (
+                  <span className="font-mono text-[10.5px] text-silk-2">
+                    {m.editor_read_only()}
+                  </span>
+                )}
               </ScreenTab>
               <button
                 type="button"

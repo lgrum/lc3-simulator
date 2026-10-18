@@ -16,4 +16,5 @@ export const modulesBackend: ModulesBackend = {
   listVersions: offline,
   getSource: offline,
   publish: offline,
+  fetchBuild: offline,
 };

@@ -1,5 +1,6 @@
 import { moduleName } from "@/lib/assembler/linker";
 import type {
+  FetchedModule,
   ModuleSummary,
   PublishResult,
   VersionSource,
@@ -12,6 +13,8 @@ export type ModulesBackend = {
   listVersions: (moduleId: number) => Promise<Array<VersionSummary>>;
   getSource: (versionId: number) => Promise<VersionSource>;
   publish: (name: string, source: string) => Promise<PublishResult>;
+  /** Admins: the latest version of each named module (see BuildLibrary). */
+  fetchBuild: (names: Array<string>) => Promise<Array<FetchedModule>>;
 };
 
 /**

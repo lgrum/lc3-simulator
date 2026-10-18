@@ -13,6 +13,7 @@ import {
   FolderIcon,
   FolderOpenIcon,
   FolderPlusIcon,
+  LockIcon,
   MoreHorizontalIcon,
   PackageIcon,
   UploadIcon,
@@ -313,7 +314,7 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
   "use no memo";
   const workbench = useWorkbench();
   const project = useProject();
-  const { files, folders, entry } = project;
+  const { files, folders, entry, remote } = project;
   const { chosen } = useEditorTabs();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
@@ -373,7 +374,9 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
     canDrop: (items, target) =>
       target.item.isFolder() &&
       items.every(
-        (item) => folderOf(item.getId()) !== folderPath(target.item.getId()),
+        (item) =>
+          folderOf(item.getId()) !== folderPath(target.item.getId()) &&
+          !workbench.project.holdsRemote(item.getId()),
       ),
     onDrop: async (items, target) => {
       for (const item of items)
@@ -406,6 +409,7 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
         isEnabled: (t) => !t.getState().dnd,
         handler: (_, t) => {
           const item = t.getFocusedItem();
+          if (workbench.project.holdsRemote(item.getId())) return;
           t.startKeyboardDrag([item]);
           if (t.getState().dnd?.dragTarget) return;
           // The first target is only looked for below the row, so the last
@@ -433,6 +437,7 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
         handler: (event, t) => {
           if (!isTreeItem(event.target)) return;
           const item = t.getFocusedItem();
+          if (workbench.project.holdsRemote(item.getId())) return;
           setEditing({
             kind: "rename",
             path: item.getId(),
@@ -538,7 +543,18 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
     setEditing({ kind, folder });
   };
 
-  const fileActions = (path: string): Array<Action> => [
+  const fileActions = (path: string): Array<Action> =>
+    workbench.project.isRemote(path)
+      ? [
+          { label: m.file_open_tab(), run: () => open(path) },
+          {
+            label: m.file_download(),
+            run: () => downloadFile(baseName(path), files.get(path) ?? ""),
+          },
+        ]
+      : localFileActions(path);
+
+  const localFileActions = (path: string): Array<Action> => [
     { label: m.file_open_tab(), run: () => open(path) },
     {
       label: m.file_rename(),
@@ -567,6 +583,11 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
     { label: m.file_new_here(), run: () => startNew("new-file", path) },
     { label: m.folder_new_here(), run: () => startNew("new-folder", path) },
     { label: m.file_upload_here(), run: () => startUpload(path) },
+    // A folder holding read-only files from the server stays where it is.
+    ...(workbench.project.holdsRemote(path) ? [] : movableFolderActions(path)),
+  ];
+
+  const movableFolderActions = (path: string): Array<Action> => [
     {
       label: m.file_rename(),
       run: () => setEditing({ kind: "rename", path, isFolder: true }),
@@ -694,12 +715,18 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
         {headerButton(
           m.file_download_zip(),
           <PackageIcon aria-hidden className="size-3.5" />,
-          () =>
+          () => {
+            // The local project only: server modules aren't part of it.
+            const saved = workbench.project.toSaved();
             downloadFile(
               ZIP_NAME,
-              zipProject(workbench.project.getProject()),
+              zipProject({
+                files: new Map(Object.entries(saved.files)),
+                folders: new Set(saved.folders),
+              }),
               "application/zip",
-            ),
+            );
+          },
         )}
         <input
           ref={upload}
@@ -801,6 +828,14 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
                         <ContextActions actions={actions} />
                       </ContextMenuPopup>
                     </ContextMenu>
+                    {remote.has(path) && (
+                      <SidebarMenuBadge
+                        title={m.file_remote_hint()}
+                        className="right-7 text-silk-2"
+                      >
+                        <LockIcon aria-label={m.editor_read_only()} />
+                      </SidebarMenuBadge>
+                    )}
                     {path === entry && (
                       <SidebarMenuBadge
                         title={m.file_entry_hint()}

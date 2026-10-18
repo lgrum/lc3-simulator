@@ -8,6 +8,7 @@ import type {
 } from "@/lib/simulator/controller";
 import { OS_FILE, assembleOs } from "@/lib/simulator/os/load";
 import osSource from "@/lib/simulator/os/lc3os.asm?raw";
+import { namespaceOf } from "@/server/access";
 // Imported by its alias path, which component tests replace with a stub.
 import { accountBackend, modulesBackend } from "@/workbench/lib/server-api";
 
@@ -64,6 +65,15 @@ function createWorkbench(): Workbench {
   assembly.assemble();
   const tabs = new EditorTabs(project, () => machine.getSnapshot().pc);
   const account = new AccountStore(accountBackend);
+  // An admin's builds fetch the published modules they need into lib/.
+  account.subscribe(() => {
+    const { viewer } = account.getState();
+    assembly.setLibrary(
+      viewer?.kind === "admin"
+        ? { namespace: namespaceOf(viewer), fetch: modulesBackend.fetchBuild }
+        : null,
+    );
+  });
   void account.refresh();
   return {
     machine,

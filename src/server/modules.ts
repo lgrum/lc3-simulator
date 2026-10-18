@@ -41,6 +41,22 @@ export type ModuleSummary = {
 
 export type VersionSummary = { id: number; number: number; createdAt: number };
 
+/** A published module fetched for an admin's build. */
+export type FetchedModule = {
+  /** The name the admin's project uses: `g7_trig`, or the admin's `calc`. */
+  name: string;
+  /** `group:7` or `admin:<id>`. */
+  namespace: string;
+  /** The module's name in its owner's namespace: `trig`. */
+  module: string;
+  version: number;
+  source: string;
+};
+
+export const fetchBuildInput = z.object({
+  names: z.array(z.string().max(80)).max(200),
+});
+
 export type VersionSource = {
   id: number;
   module: string;

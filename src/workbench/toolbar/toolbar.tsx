@@ -4,6 +4,7 @@ import { m } from "@/paraglide/messages";
 
 import { AccountMenu } from "../account/account-menu";
 import { PublishButton } from "../account/publish-button";
+import { StubToggle } from "../account/stub-toggle";
 import { HintedKey, Shortcut } from "../ui/key";
 import { useIsStale, useWorkbench } from "../workbench-provider";
 import { ExamplesMenu, FileMenu } from "./file-menus";
@@ -43,12 +44,13 @@ export function Toolbar() {
             {m.assemble_hint()} <Shortcut>Ctrl+B</Shortcut>
           </>
         }
-        onClick={() => assembly.assemble()}
+        onClick={() => void assembly.build()}
       >
         <BinaryIcon aria-hidden />
         {m.assemble()}
         <StaleDot />
       </HintedKey>
+      <StubToggle />
       <PublishButton />
       <Separator />
       <RunControls />

@@ -1,3 +1,4 @@
+import { STUBS_FILE } from "@/lib/assembler/linker";
 import { m } from "@/paraglide/messages";
 
 import { EmptyHint } from "../debug/shared";
@@ -33,13 +34,17 @@ export function LinkMapView() {
               className="border-t border-screen-line align-top text-silk"
             >
               <td className="px-4 py-1.5">
-                <button
-                  type="button"
-                  onClick={() => tabs.show(entry.file)}
-                  className="rounded-[3px] font-mono text-silk-hi outline-none hover:underline focus-visible:ring-2 focus-visible:ring-phosphor/70"
-                >
-                  {entry.file}
-                </button>
+                {entry.file === STUBS_FILE ? (
+                  <span className="text-silk-2">{m.link_map_stubs()}</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => tabs.show(entry.file)}
+                    className="rounded-[3px] font-mono text-silk-hi outline-none hover:underline focus-visible:ring-2 focus-visible:ring-phosphor/70"
+                  >
+                    {entry.file}
+                  </button>
+                )}
                 {i === 0 && (
                   <span className="ml-2 rounded-full bg-phosphor/15 px-1.5 text-[10.5px] text-phosphor">
                     {m.file_entry_badge()}

@@ -161,3 +161,70 @@ describe("ProjectStore", () => {
     expect(() => project.deleteFolder("app")).toThrow();
   });
 });
+
+describe("remote files", () => {
+  const remote = new Map([
+    ["lib/g7_trig.asm", "SIN RET"],
+    ["lib/g7_helpers.asm", "HALF RET"],
+  ]);
+
+  it("shows remote files without saving them or bumping the revision", () => {
+    const storage = memoryStorage();
+    const project = store(storage);
+    project.writeFile("main.asm", "MAIN");
+    const { revision } = project.getProject();
+    project.setRemoteFiles(remote);
+    const current = project.getProject();
+    expect(current.revision).toBe(revision);
+    expect(current.files.get("lib/g7_trig.asm")).toBe("SIN RET");
+    expect(current.folders.has("lib")).toBe(true);
+    expect(project.isRemote("lib/g7_trig.asm")).toBe(true);
+    expect(project.isRemote("main.asm")).toBe(false);
+
+    project.setText("main.asm", "MAIN 2");
+    const saved = JSON.parse(storage.getItem("lc3sim.project")!);
+    expect(Object.keys(saved.files).sort()).toEqual(["hello.asm", "main.asm"]);
+    expect(saved.folders).toEqual([]);
+    expect(store(storage).getProject().remote.size).toBe(0);
+  });
+
+  it("refuses to change remote files or folders holding them", () => {
+    const project = store(memoryStorage());
+    project.setRemoteFiles(remote);
+    expect(() => project.setText("lib/g7_trig.asm", "x")).toThrow("read-only");
+    expect(() => project.writeFile("lib/g7_trig.asm", "x")).toThrow();
+    expect(() => project.deleteFile("lib/g7_trig.asm")).toThrow();
+    expect(() => project.move("lib/g7_trig.asm", "trig.asm")).toThrow();
+    expect(() => project.move("lib", "other")).toThrow();
+    expect(() => project.deleteFolder("lib")).toThrow();
+    expect(() => project.setEntry("lib/g7_trig.asm")).toThrow();
+    expect(project.holdsRemote("lib")).toBe(true);
+  });
+
+  it("replaces the remote files and keeps local folders", () => {
+    const project = store(memoryStorage());
+    project.createFolder("lib");
+    project.setRemoteFiles(remote);
+    project.setRemoteFiles(new Map([["lib/g3_trig.asm", "X"]]));
+    expect([...project.getProject().remote]).toEqual(["lib/g3_trig.asm"]);
+    expect(project.getProject().files.has("lib/g7_trig.asm")).toBe(false);
+    project.setRemoteFiles(new Map());
+    expect(project.getProject().folders.has("lib")).toBe(true);
+  });
+
+  it("never hides a local file behind a remote one", () => {
+    const project = store(memoryStorage());
+    project.writeFile("lib/g7_trig.asm", "LOCAL");
+    project.setRemoteFiles(remote);
+    expect(project.getText("lib/g7_trig.asm")).toBe("LOCAL");
+    expect(project.isRemote("lib/g7_trig.asm")).toBe(false);
+  });
+
+  it("drops remote files when another project opens", () => {
+    const project = store(memoryStorage());
+    project.setRemoteFiles(remote);
+    project.replace(FALLBACK);
+    expect(project.getProject().remote.size).toBe(0);
+    expect(project.getProject().files.has("lib/g7_trig.asm")).toBe(false);
+  });
+});

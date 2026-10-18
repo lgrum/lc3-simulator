@@ -73,8 +73,11 @@ function Versions({
 
   const restore = async (version: VersionSummary) => {
     const { source } = await workbench.modules.getSource(version.id);
+    // Into a local file: lib/ holds read-only copies from the server.
     const target = restorePath(
-      workbench.project.getProject().files.keys(),
+      [...workbench.project.getProject().files.keys()].filter(
+        (path) => !workbench.project.isRemote(path),
+      ),
       module.name,
     );
     if (

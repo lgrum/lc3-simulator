@@ -272,5 +272,9 @@
   "admin_group_modules": "Group {number} · {name}",
   "admin_group_no_modules": "This group hasn't published anything yet.",
   "admin_pick_version": "Pick a version to read its source.",
-  "admin_source_caption": "{module}.asm · v{version}"
+  "admin_source_caption": "{module}.asm · v{version}",
+  "file_remote_hint": "Published module from the server, read-only. Not saved with your project.",
+  "stub_missing": "Stub missing",
+  "stub_missing_hint": "Stub missing modules: calls to labels nobody has published yet just return (RET), with a warning each",
+  "link_map_stubs": "RET stubs"
 }

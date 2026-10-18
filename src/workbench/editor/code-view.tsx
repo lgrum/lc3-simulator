@@ -243,6 +243,8 @@ function extensionsFor(
       onToggleLine: (line) => toggleBreakpointAtLine(workbench, file, line),
     }),
     ...common,
+    // Modules fetched from the server for an admin's build.
+    workbench.project.isRemote(file) ? EditorState.readOnly.of(true) : [],
     history(),
     tabStops(),
     keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),

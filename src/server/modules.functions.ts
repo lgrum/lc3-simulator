@@ -2,8 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { findGroup } from "./groups.server";
-import { publishInput } from "./modules";
+import { fetchBuildInput, publishInput } from "./modules";
 import {
+  fetchBuildModules,
   getVersionSource,
   listModulesOf,
   listVersions,
@@ -21,6 +22,14 @@ export const listMyModulesFn = createServerFn({ method: "GET" }).handler(
     return listModulesOf(viewer.userId);
   },
 );
+
+/** The latest source of each module an admin's build needs. */
+export const fetchBuildModulesFn = createServerFn({ method: "POST" })
+  .validator(fetchBuildInput)
+  .handler(async ({ data }) => {
+    const viewer = await requireViewer("admin");
+    return fetchBuildModules(viewer, data.names);
+  });
 
 /** A group's modules, for admins. Other admins' modules never show. */
 export const listGroupModulesFn = createServerFn({ method: "GET" })

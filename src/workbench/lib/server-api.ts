@@ -5,6 +5,7 @@ import { usernameClient } from "better-auth/client/plugins";
 
 import { getViewerFn } from "@/server/account.functions";
 import {
+  fetchBuildModulesFn,
   getVersionSourceFn,
   listMyModulesFn,
   listVersionsFn,
@@ -49,4 +50,5 @@ export const modulesBackend: ModulesBackend = {
   listVersions: (moduleId) => listVersionsFn({ data: { moduleId } }),
   getSource: (versionId) => getVersionSourceFn({ data: { versionId } }),
   publish: (name, source) => publishModuleFn({ data: { name, source } }),
+  fetchBuild: (names) => fetchBuildModulesFn({ data: { names } }),
 };

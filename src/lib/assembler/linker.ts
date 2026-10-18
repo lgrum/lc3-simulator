@@ -17,9 +17,17 @@ export const USER_END = 0xfdff;
 export type LinkOptions = {
   /** The project path of the entry file. */
   entry: string;
-  /** Admin builds: turn unresolved imports into RET stubs. Phase 2. */
+  /**
+   * Admin builds: turn each import nothing provides (no such module or no
+   * such label) into a one-word RET after the last module, with a warning.
+   */
   stubMissing?: boolean;
 };
+
+/** Where RET stubs for missing imports go, in segments and the link map. */
+export const STUBS_FILE = "(stubs)";
+/** `RET`: what a call to a stubbed import runs. */
+const RET = 0xc1c0;
 
 /** The OS file's module name. Programs reach the OS through TRAP. */
 export const OS_MODULE = "lc3os";
@@ -85,13 +93,36 @@ function advice(name: string): string {
   return "Use .FILL with LDR or STR.";
 }
 
-/** How a label shows in the debugger: prefixed unless it is the entry's. */
+/**
+ * How a label shows in the debugger: prefixed unless it is the entry's. The
+ * prefix is the file's base name, the name the project uses for the module
+ * (group 7's `trig` shows as `G7_TRIG-SIN` in an admin's build).
+ */
 export function displayName(
   module: ObjectModule,
   label: string,
   isEntry: boolean,
 ): string {
-  return isEntry ? label : `${module.name.toUpperCase()}-${label}`;
+  return isEntry ? label : `${moduleName(module.file).toUpperCase()}-${label}`;
+}
+
+/** How admins name group modules: `g7_trig` is group 7's `trig`. */
+const GROUP_MODULE = /^g(\d+)_(.+)$/i;
+
+/**
+ * The module an import names, as namespace and name. Imports resolve in the
+ * importer's namespace, except that an admin's `g<n>_<name>` means group
+ * n's module `name`. Group modules' own imports stay in the group's
+ * namespace, so group 7's `HELPERS-X` finds group 7's `helpers`.
+ */
+export function resolveImport(
+  namespace: string,
+  name: string,
+): { namespace: string; name: string } {
+  const group = namespace.startsWith("admin:") && GROUP_MODULE.exec(name);
+  return group
+    ? { namespace: `group:${Number(group[1])}`, name: group[2] }
+    : { namespace, name };
 }
 
 /**
@@ -145,13 +176,41 @@ export function link(
       );
     }
 
-  /** The module an importer means by `name`, in the importer's namespace. */
-  const findModule = (importer: ObjectModule, name: string) =>
-    modules.find(
+  /** The module an importer means by `name` (see resolveImport). */
+  const findModule = (importer: ObjectModule, name: string) => {
+    const target = resolveImport(importer.namespace, name);
+    return modules.find(
       (module) =>
-        module.namespace === importer.namespace &&
-        module.name.toLowerCase() === name.toLowerCase(),
+        module.namespace === target.namespace &&
+        module.name.toLowerCase() === target.name.toLowerCase(),
     );
+  };
+
+  // With stubMissing, each import nothing provides becomes a RET stub, once
+  // per label however many modules import it.
+  const stubs: Array<{
+    key: string;
+    name: string;
+    file: string;
+    line: number;
+  }> = [];
+  const stubKey = (importer: ObjectModule, module: string, label: string) => {
+    const target = resolveImport(importer.namespace, module);
+    return `${target.namespace}:${target.name.toLowerCase()}-${label}`;
+  };
+  const addStub = (
+    importer: ObjectModule,
+    external: { module: string; label: string; line: number },
+  ) => {
+    const key = stubKey(importer, external.module, external.label);
+    if (!stubs.some((other) => other.key === key))
+      stubs.push({
+        key,
+        name: `${external.module.toUpperCase()}-${external.label}`,
+        file: importer.file,
+        line: external.line,
+      });
+  };
 
   // Collect the link set: the entry file, then the modules each one imports,
   // breadth-first in the order of their .EXTERNAL lines.
@@ -161,11 +220,13 @@ export function link(
     for (const external of importer.externals.values()) {
       const target = findModule(importer, external.module);
       if (!target) {
-        error(
-          importer.file,
-          external.line,
-          `No module named ${external.module} in this program`,
-        );
+        if (options.stubMissing) addStub(importer, external);
+        else
+          error(
+            importer.file,
+            external.line,
+            `No module named ${external.module} in this program`,
+          );
         continue;
       }
       if (target === entry) {
@@ -176,12 +237,15 @@ export function link(
         );
         continue;
       }
-      if (!target.symbols.has(external.label))
-        error(
-          importer.file,
-          external.line,
-          `${target.file} has no label ${external.label}`,
-        );
+      if (!target.symbols.has(external.label)) {
+        if (options.stubMissing) addStub(importer, external);
+        else
+          error(
+            importer.file,
+            external.line,
+            `${target.file} has no label ${external.label}`,
+          );
+      }
       if (!linkSet.includes(target)) linkSet.push(target);
     }
   }
@@ -198,9 +262,12 @@ export function link(
     bases.set(module, next);
     next += module.words.length;
   }
+  // Stubs go after the last module, one word each.
+  const stubBase = next;
+  next += stubs.length;
   // The entry may wrap past xFFFF as a single file always could; modules
   // packed after it must fit in user memory.
-  if (linkSet.length > 1 && next - 1 > USER_END)
+  if ((linkSet.length > 1 || stubs.length > 0) && next - 1 > USER_END)
     error(
       null,
       null,
@@ -214,9 +281,11 @@ export function link(
     const { module, label } = splitQualifiedName(name);
     const target = findModule(importer, module);
     const offset = target?.symbols.get(label);
-    return target && offset !== undefined
-      ? (bases.get(target)! + offset) & 0xffff
-      : undefined;
+    if (target && offset !== undefined)
+      return (bases.get(target)! + offset) & 0xffff;
+    const key = stubKey(importer, module, label);
+    const index = stubs.findIndex((other) => other.key === key);
+    return index < 0 ? undefined : (stubBase + index) & 0xffff;
   };
 
   const segments: Array<Segment> = [];
@@ -272,6 +341,33 @@ export function link(
       end: (origin + module.words.length - 1) & 0xffff,
       symbols: moduleSymbols,
     });
+  }
+
+  if (stubs.length > 0) {
+    const stubSymbols = stubs.map((stub, i) => ({
+      name: stub.name,
+      addr: (stubBase + i) & 0xffff,
+    }));
+    segments.push({
+      origin: stubBase,
+      words: stubs.map(() => RET),
+      file: STUBS_FILE,
+    });
+    for (const { name, addr } of stubSymbols) symbols.set(name, addr);
+    map.push({
+      file: STUBS_FILE,
+      module: STUBS_FILE,
+      start: stubBase,
+      end: (stubBase + stubs.length - 1) & 0xffff,
+      symbols: stubSymbols,
+    });
+    for (const [i, stub] of stubs.entries())
+      diagnostics.push({
+        file: stub.file,
+        position: { line: stub.line },
+        severity: "warning",
+        text: `${stub.name} is missing: calls to it return at once (RET stub at ${hex(stubBase + i)})`,
+      });
   }
 
   for (const [a, b] of overlappingSegments(segments)) {

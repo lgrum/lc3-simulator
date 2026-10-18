@@ -9,16 +9,22 @@ export type SavedProject = {
 };
 
 export type Project = {
+  /** Local files and the read-only remote ones. */
   files: ReadonlyMap<string, string>;
   folders: ReadonlySet<string>;
   entry: string;
-  /** Bumped on every change, to tell when the last build is stale. */
+  /** Bumped on every local change, to tell when the last build is stale. */
   revision: number;
+  /**
+   * Read-only files fetched from the server for an admin's build, e.g.
+   * `lib/g7_trig.asm`. Kept in memory for the session, never saved.
+   */
+  remote: ReadonlySet<string>;
 };
 
 /**
- * Where a project is read from and written to. Phase 1 has only the
- * localStorage backend.
+ * Where the local project is read from and written to: localStorage. Remote
+ * files come from the server instead (setRemoteFiles) and are never saved.
  */
 export type ProjectBackend = {
   load: () => SavedProject | undefined;
@@ -115,6 +121,8 @@ function parentsOf(path: string): Array<string> {
 export class ProjectStore {
   private project: Project;
   private readonly listeners = new Set<() => void>();
+  /** Folders that exist only because remote files are in them. */
+  private remoteFolders: ReadonlySet<string> = new Set();
 
   constructor(
     fallback: SavedProject,
@@ -136,15 +144,65 @@ export class ProjectStore {
     return this.project.files.get(path);
   }
 
+  /** Whether a file is a read-only remote one. */
+  isRemote(path: string): boolean {
+    return this.project.remote.has(path);
+  }
+
+  /** Whether a path is a remote file or a folder holding one. */
+  holdsRemote(path: string): boolean {
+    return [...this.project.remote].some(
+      (file) => file === path || file.startsWith(path + "/"),
+    );
+  }
+
+  private checkWritable(path: string): void {
+    if (this.holdsRemote(path)) throw new Error(`${path} is read-only`);
+  }
+
+  /**
+   * Replaces the read-only remote files. They don't count as a change to the
+   * project: its revision stays, and nothing is saved.
+   */
+  setRemoteFiles(remote: ReadonlyMap<string, string>): void {
+    const local = [...this.project.files].filter(
+      ([path]) => !this.project.remote.has(path),
+    );
+    const files = new Map(local);
+    const paths = new Set<string>();
+    for (const [path, text] of remote)
+      if (!files.has(path)) {
+        files.set(path, text);
+        paths.add(path);
+      }
+    const folders = new Set(
+      [...this.project.folders].filter(
+        (folder) => !this.remoteFolders.has(folder),
+      ),
+    );
+    const remoteFolders = new Set<string>();
+    for (const path of paths)
+      for (const folder of parentsOf(path))
+        if (!folders.has(folder)) {
+          folders.add(folder);
+          remoteFolders.add(folder);
+        }
+    this.remoteFolders = remoteFolders;
+    this.project = { ...this.project, files, folders, remote: paths };
+    for (const listener of this.listeners) listener();
+  }
+
   setText(path: string, text: string): void {
     if (this.project.files.get(path) === text) return;
     if (!this.project.files.has(path)) throw new Error(`No file ${path}`);
+    this.checkWritable(path);
     this.change({ files: new Map(this.project.files).set(path, text) });
   }
 
   /** Adds a file, or replaces the text of an existing one. */
   writeFile(path: string, text: string): void {
     if (this.project.files.get(path) === text) return;
+    this.checkWritable(path);
     const folders = new Set(this.project.folders);
     for (const folder of parentsOf(path)) folders.add(folder);
     this.change({
@@ -155,6 +213,7 @@ export class ProjectStore {
 
   deleteFile(path: string): void {
     if (!this.project.files.has(path)) return;
+    this.checkWritable(path);
     if (path === this.project.entry)
       throw new Error("The entry file can't be deleted");
     const files = new Map(this.project.files);
@@ -179,6 +238,7 @@ export class ProjectStore {
    */
   move(from: string, to: string): Map<string, string> {
     if (from === to) return new Map();
+    this.checkWritable(from);
     if (to.startsWith(from + "/"))
       throw new Error(`Can't move ${from} into itself`);
     const moves = this.movesFor(from, to);
@@ -211,6 +271,7 @@ export class ProjectStore {
 
   /** Deletes a folder with every file and folder in it. */
   deleteFolder(path: string): void {
+    this.checkWritable(path);
     const inside = (other: string) =>
       other === path || other.startsWith(path + "/");
     if (inside(this.project.entry))
@@ -231,19 +292,25 @@ export class ProjectStore {
   setEntry(path: string): void {
     if (path === this.project.entry) return;
     if (!this.project.files.has(path)) throw new Error(`No file ${path}`);
+    this.checkWritable(path);
     this.change({ entry: path });
   }
 
-  /** Replaces the whole project, e.g. with an example. */
+  /** Replaces the whole project, e.g. with an example, dropping remote files. */
   replace(project: SavedProject): void {
+    this.remoteFolders = new Set();
     this.change(toProject(project, 0));
   }
 
+  /** The local project, without remote files or folders only they need. */
   toSaved(): SavedProject {
+    const { files, folders, remote, entry } = this.project;
     return {
-      files: Object.fromEntries(this.project.files),
-      folders: [...this.project.folders],
-      entry: this.project.entry,
+      files: Object.fromEntries(
+        [...files].filter(([path]) => !remote.has(path)),
+      ),
+      folders: [...folders].filter((folder) => !this.remoteFolders.has(folder)),
+      entry,
     };
   }
 
@@ -267,5 +334,6 @@ function toProject(saved: SavedProject, revision: number): Project {
     folders,
     entry: saved.entry,
     revision,
+    remote: new Set(),
   };
 }

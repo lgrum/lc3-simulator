@@ -1,11 +1,17 @@
 import { and, desc, eq, max, sql } from "drizzle-orm";
 
-import { viewerOf } from "./access";
+import { namespaceOf, viewerOf } from "./access";
 import type { Viewer } from "./access";
 import { db } from "./db/client.server";
 import { modules, user, versions } from "./db/schema";
-import { canRead, checkPublish } from "./modules";
+import {
+  canRead,
+  checkPublish,
+  groupModuleName,
+  importTarget,
+} from "./modules";
 import type {
+  FetchedModule,
   ImportTarget,
   ModuleSummary,
   Owner,
@@ -142,6 +148,38 @@ export async function latestVersion(
     .limit(1)
     .get();
   return row ?? null;
+}
+
+/**
+ * The latest version of each module an admin names, as `g<n>_<name>` for a
+ * group's or a plain name for the admin's own. Names nobody can see are
+ * left out, so another admin's module looks like one that doesn't exist.
+ */
+export async function fetchBuildModules(
+  viewer: Viewer,
+  names: ReadonlyArray<string>,
+): Promise<Array<FetchedModule>> {
+  const found = new Map<string, FetchedModule>();
+  for (const name of names) {
+    const target = importTarget(viewer, name);
+    const owner =
+      target.kind === "own" ? viewer.userId : await groupUserId(target.group);
+    const latest = owner && (await latestVersion(owner, target.name));
+    if (!latest) continue;
+    const visible =
+      target.kind === "own"
+        ? latest.module
+        : groupModuleName(target.group, latest.module);
+    found.set(visible.toLowerCase(), {
+      name: visible,
+      namespace:
+        target.kind === "own" ? namespaceOf(viewer) : `group:${target.group}`,
+      module: latest.module,
+      version: latest.number,
+      source: latest.source,
+    });
+  }
+  return [...found.values()];
 }
 
 /** Whether an import of the viewer's names a published module it can see. */
