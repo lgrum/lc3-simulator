@@ -6,6 +6,7 @@ import {
   MenuGroup,
   MenuGroupLabel,
   MenuItem,
+  MenuLinkItem,
   MenuPopup,
   MenuSeparator,
   MenuTrigger,
@@ -58,6 +59,10 @@ export function AccountMenu() {
           </MenuGroupLabel>
         </MenuGroup>
         <MenuSeparator />
+        {viewer.kind === "admin" && (
+          // A plain link: the workbench also renders without a router (tests).
+          <MenuLinkItem href="/admin">{m.admin_open()}</MenuLinkItem>
+        )}
         <MenuItem onClick={() => void account.signOut()}>
           {m.account_log_out()}
         </MenuItem>
