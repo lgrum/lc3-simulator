@@ -8,8 +8,12 @@ import type {
 } from "@/lib/simulator/controller";
 import { OS_FILE, assembleOs } from "@/lib/simulator/os/load";
 import osSource from "@/lib/simulator/os/lc3os.asm?raw";
+// Imported by its alias path, which component tests replace with a stub.
+import { accountBackend } from "@/workbench/lib/server-api";
 
 import { EXAMPLES } from "./examples";
+import { AccountStore } from "./lib/account-store";
+import type { AccountState } from "./lib/account-store";
 import { AssemblyStore } from "./lib/assembly-store";
 import type { Assembly } from "./lib/assembly-store";
 import { ChangeTracker } from "./lib/change-tracker";
@@ -27,6 +31,8 @@ export type Workbench = {
   project: ProjectStore;
   assembly: AssemblyStore;
   tabs: EditorTabs;
+  /** Who is logged in; nobody, for anonymous use. */
+  account: AccountStore;
   subscribe: (callback: () => void) => () => void;
   getSnapshot: () => MachineSnapshot;
   /** The read-only OS file. */
@@ -54,12 +60,15 @@ function createWorkbench(): Workbench {
   );
   assembly.assemble();
   const tabs = new EditorTabs(project, () => machine.getSnapshot().pc);
+  const account = new AccountStore(accountBackend);
+  void account.refresh();
   return {
     machine,
     changes,
     project,
     assembly,
     tabs,
+    account,
     subscribe: machine.subscribe.bind(machine),
     getSnapshot: machine.getSnapshot.bind(machine),
     os: {
@@ -132,4 +141,9 @@ export function useAssembly(): Assembly {
 /** Whether any file changed since the last assemble. */
 export function useIsStale(): boolean {
   return useAssembly().revision !== useProject().revision;
+}
+
+export function useAccount(): AccountState {
+  const { account } = useWorkbench();
+  return useSyncExternalStore(account.subscribe, account.getState);
 }

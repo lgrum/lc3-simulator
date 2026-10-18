@@ -208,5 +208,15 @@
   "tree_move_started": "Moving {items} into {target}. Press the up and down arrows to choose a folder, Enter to move, Escape to cancel.",
   "tree_move_target": "Into {target}",
   "tree_move_done": "Moved.",
-  "tree_move_cancelled": "Move cancelled."
+  "tree_move_cancelled": "Move cancelled.",
+  "account_log_in": "Log in",
+  "account_log_out": "Log out",
+  "account_group": "Group {number}",
+  "account_logged_in_as": "Logged in as {name}",
+  "account_login_description": "Groups log in with their group number, professors with their username.",
+  "account_username": "Group number or username",
+  "account_password": "Password",
+  "account_login_wrong": "Wrong group number, username or password.",
+  "account_login_rate_limited": "Too many attempts from this network. Wait a minute and try again.",
+  "account_login_unreachable": "Couldn't reach the server. Check your connection and try again."
 }

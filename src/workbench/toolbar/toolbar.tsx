@@ -2,6 +2,7 @@ import { BinaryIcon } from "lucide-react";
 
 import { m } from "@/paraglide/messages";
 
+import { AccountMenu } from "../account/account-menu";
 import { HintedKey, Shortcut } from "../ui/key";
 import { useIsStale, useWorkbench } from "../workbench-provider";
 import { ExamplesMenu, FileMenu } from "./file-menus";
@@ -50,6 +51,7 @@ export function Toolbar() {
       <Separator />
       <RunControls />
       <RunState />
+      <AccountMenu />
     </header>
   );
 }

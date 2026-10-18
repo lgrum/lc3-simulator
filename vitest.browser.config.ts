@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import { defineConfig } from "vite-plus";
 import { playwright } from "vite-plus/test/browser-playwright";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
@@ -10,7 +12,15 @@ import tailwindcss from "@tailwindcss/vite";
 // with `vp run test:browser` (once per machine: `pnpm exec playwright install
 // chromium`).
 export default defineConfig({
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    tsconfigPaths: true,
+    alias: {
+      // No Worker in component tests: the workbench runs offline.
+      "@/workbench/lib/server-api": fileURLToPath(
+        new URL("./src/test/server-api-stub.ts", import.meta.url),
+      ),
+    },
+  },
   plugins: [
     paraglideVitePlugin({
       project: "./project.inlang",

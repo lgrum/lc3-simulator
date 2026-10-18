@@ -1,0 +1,4 @@
+# Local secrets for `vp dev` and `wrangler dev`. Copy to .dev.vars.
+# Production uses `wrangler secret put <NAME>` instead.
+BETTER_AUTH_SECRET=local-dev-secret-change-me-0123456789
+PASSWORD_PEPPER=local-dev-pepper
