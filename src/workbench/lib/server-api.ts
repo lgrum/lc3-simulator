@@ -1,11 +1,18 @@
 // Every call the workbench makes to the Worker goes through this module, so
-// component tests can replace it with an offline stub (vitest.browser.config.ts).
+// tests can replace it with an offline stub (vitest configs alias it).
 import { createAuthClient } from "better-auth/client";
 import { usernameClient } from "better-auth/client/plugins";
 
 import { getViewerFn } from "@/server/account.functions";
+import {
+  getVersionSourceFn,
+  listMyModulesFn,
+  listVersionsFn,
+  publishModuleFn,
+} from "@/server/modules.functions";
 
 import type { AccountBackend } from "./account-store";
+import type { ModulesBackend } from "./published-modules";
 
 let client: ReturnType<typeof createClient> | undefined;
 
@@ -35,4 +42,11 @@ export const accountBackend: AccountBackend = {
   async signOut() {
     await authClient().signOut();
   },
+};
+
+export const modulesBackend: ModulesBackend = {
+  listMine: () => listMyModulesFn(),
+  listVersions: (moduleId) => listVersionsFn({ data: { moduleId } }),
+  getSource: (versionId) => getVersionSourceFn({ data: { versionId } }),
+  publish: (name, source) => publishModuleFn({ data: { name, source } }),
 };

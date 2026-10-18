@@ -21,9 +21,9 @@ describe("AccountStore", () => {
     const store = new AccountStore(
       backend({ fetchViewer: () => Promise.resolve(group7) }),
     );
-    expect(store.getState()).toEqual({ viewer: null, known: false });
+    expect(store.getState()).toMatchObject({ viewer: null, known: false });
     await store.refresh();
-    expect(store.getState()).toEqual({ viewer: group7, known: true });
+    expect(store.getState()).toMatchObject({ viewer: group7, known: true });
   });
 
   it("treats an unreachable server as nobody logged in", async () => {
@@ -33,7 +33,7 @@ describe("AccountStore", () => {
       }),
     );
     await store.refresh();
-    expect(store.getState()).toEqual({ viewer: null, known: true });
+    expect(store.getState()).toMatchObject({ viewer: null, known: true });
   });
 
   it("reads the session again after logging in", async () => {

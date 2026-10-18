@@ -3,6 +3,7 @@ import { BinaryIcon } from "lucide-react";
 import { m } from "@/paraglide/messages";
 
 import { AccountMenu } from "../account/account-menu";
+import { PublishButton } from "../account/publish-button";
 import { HintedKey, Shortcut } from "../ui/key";
 import { useIsStale, useWorkbench } from "../workbench-provider";
 import { ExamplesMenu, FileMenu } from "./file-menus";
@@ -48,6 +49,7 @@ export function Toolbar() {
         {m.assemble()}
         <StaleDot />
       </HintedKey>
+      <PublishButton />
       <Separator />
       <RunControls />
       <RunState />

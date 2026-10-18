@@ -15,6 +15,8 @@ export type AccountState = {
   viewer: Viewer | null;
   /** False until the first check of the session cookie finishes. */
   known: boolean;
+  /** Bumped when the viewer publishes, so module lists read again. */
+  published: number;
 };
 
 /**
@@ -23,7 +25,7 @@ export type AccountState = {
  * useSyncExternalStore.
  */
 export class AccountStore {
-  private state: AccountState = { viewer: null, known: false };
+  private state: AccountState = { viewer: null, known: false, published: 0 };
   private readonly listeners = new Set<() => void>();
 
   constructor(private readonly backend: AccountBackend) {}
@@ -45,7 +47,7 @@ export class AccountStore {
     } catch {
       // No server (e.g. a static preview): use the app anonymously.
     }
-    this.publish({ viewer, known: true });
+    this.publish({ ...this.state, viewer, known: true });
   }
 
   /** Logs in; returns why it failed, or null. */
@@ -69,6 +71,11 @@ export class AccountStore {
     } finally {
       await this.refresh();
     }
+  }
+
+  /** Tells module lists that the viewer published a new version. */
+  notePublished(): void {
+    this.publish({ ...this.state, published: this.state.published + 1 });
   }
 
   private publish(state: AccountState): void {

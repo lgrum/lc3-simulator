@@ -9,11 +9,12 @@ import type {
 import { OS_FILE, assembleOs } from "@/lib/simulator/os/load";
 import osSource from "@/lib/simulator/os/lc3os.asm?raw";
 // Imported by its alias path, which component tests replace with a stub.
-import { accountBackend } from "@/workbench/lib/server-api";
+import { accountBackend, modulesBackend } from "@/workbench/lib/server-api";
 
 import { EXAMPLES } from "./examples";
 import { AccountStore } from "./lib/account-store";
 import type { AccountState } from "./lib/account-store";
+import type { ModulesBackend } from "./lib/published-modules";
 import { AssemblyStore } from "./lib/assembly-store";
 import type { Assembly } from "./lib/assembly-store";
 import { ChangeTracker } from "./lib/change-tracker";
@@ -33,6 +34,8 @@ export type Workbench = {
   tabs: EditorTabs;
   /** Who is logged in; nobody, for anonymous use. */
   account: AccountStore;
+  /** Published modules on the server. */
+  modules: ModulesBackend;
   subscribe: (callback: () => void) => () => void;
   getSnapshot: () => MachineSnapshot;
   /** The read-only OS file. */
@@ -69,6 +72,7 @@ function createWorkbench(): Workbench {
     assembly,
     tabs,
     account,
+    modules: modulesBackend,
     subscribe: machine.subscribe.bind(machine),
     getSnapshot: machine.getSnapshot.bind(machine),
     os: {

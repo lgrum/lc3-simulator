@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { m } from "@/paraglide/messages";
 
+import { MyModulesView } from "./account/my-modules-view";
 import { LinkMapView } from "./build/link-map-view";
 import { ProblemsView } from "./build/problems-view";
 import { ConsoleView, useWaitingForInput } from "./console/console-view";
@@ -16,7 +17,12 @@ import {
   ScreenTabPanel,
   ScreenTabs,
 } from "./ui/screen-tabs";
-import { useAssembly, useMachineRead, useSnapshot } from "./workbench-provider";
+import {
+  useAccount,
+  useAssembly,
+  useMachineRead,
+  useSnapshot,
+} from "./workbench-provider";
 
 type BottomTab =
   | "console"
@@ -24,7 +30,8 @@ type BottomTab =
   | "linkmap"
   | "trace"
   | "breakpoints"
-  | "watchpoints";
+  | "watchpoints"
+  | "modules";
 
 function Count({ value }: { value: number }) {
   if (value === 0) return null;
@@ -57,6 +64,7 @@ export function BottomPanel() {
   const { output, version } = useSnapshot();
   const waiting = useWaitingForInput();
   const { diagnostics } = useAssembly();
+  const { viewer } = useAccount();
   const failed = diagnostics.some(({ severity }) => severity === "error");
   // A failed build brings Problems forward and a program waiting for a key
   // brings the console forward, unless the user picked another tab since.
@@ -70,7 +78,9 @@ export function BottomPanel() {
       ? "problems"
       : waiting && choice.version !== version
         ? "console"
-        : choice.tab;
+        : choice.tab === "modules" && !viewer
+          ? "console"
+          : choice.tab;
   const [clearedAt, setClearedAt] = useState(0);
   const counts = useMachineRead((machine) => ({
     breakpoints: machine.breakpoints.list().length,
@@ -110,6 +120,7 @@ export function BottomPanel() {
             {m.watchpoints()}
             <Count value={counts.watchpoints} />
           </ScreenTab>
+          {viewer && <ScreenTab value="modules">{m.modules_tab()}</ScreenTab>}
           <span className="ml-auto self-center">
             {tab === "console" && (
               <ToolButton onClick={() => setClearedAt(output.length)}>
@@ -136,6 +147,11 @@ export function BottomPanel() {
         <ScreenTabPanel value="watchpoints">
           <WatchpointsView />
         </ScreenTabPanel>
+        {viewer && (
+          <ScreenTabPanel value="modules">
+            <MyModulesView />
+          </ScreenTabPanel>
+        )}
       </ScreenTabs>
     </Screen>
   );

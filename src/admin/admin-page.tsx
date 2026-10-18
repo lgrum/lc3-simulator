@@ -24,6 +24,7 @@ import { useAskDialog } from "@/workbench/ui/ask-dialog";
 import { Panel, PanelHeader } from "@/workbench/ui/surfaces";
 
 import { GroupDialog, TokenDialog } from "./group-dialog";
+import { GroupModules } from "./group-modules";
 import type { GroupDialogMode, GroupDialogValues } from "./group-dialog";
 
 /** The error of a failed server call, for the dialog. */
@@ -47,6 +48,9 @@ export function AdminPage({
   const [token, setToken] = useState<{ number: number; token: string } | null>(
     null,
   );
+  // The group whose modules are shown, by user id so renames keep it.
+  const [viewing, setViewing] = useState<string | null>(null);
+  const viewed = groups.find((group) => group.userId === viewing);
 
   const reload = () => router.invalidate({ sync: true });
 
@@ -146,6 +150,14 @@ export function AdminPage({
                         <Button
                           size="sm"
                           variant="ghost"
+                          aria-pressed={viewing === group.userId}
+                          onClick={() => setViewing(group.userId)}
+                        >
+                          {m.admin_view_modules()}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => setEditing({ kind: "rename", group })}
                         >
                           {m.admin_rename()}
@@ -173,6 +185,7 @@ export function AdminPage({
             </Table>
           )}
         </Panel>
+        {viewed && <GroupModules key={viewed.userId} group={viewed} />}
       </main>
       <GroupDialog
         mode={editing}
