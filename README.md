@@ -1,16 +1,19 @@
 # LC-3 Simulator
 
-An LC-3 assembler and simulator that runs entirely in the browser. It is a
-TanStack Start app in SPA mode: no route renders on a server, there are no
-server functions, and the build is a set of static files.
+An LC-3 assembler and simulator that runs in the browser. It is a TanStack
+Start app in SPA mode: no route renders on a server, and the page is a set of
+static files. A small Cloudflare Worker with a D1 database serves `/api/*` and
+the server functions (`/_serverFn/*`), for accounts and published modules.
 
 - Assembler: `src/lib/assembler/`
 - Simulator engine: `src/lib/simulator/` (see its [README](src/lib/simulator/README.md))
+- Server code: `src/server/` (Drizzle schema in `src/server/db/schema.ts`)
 
 ## Development
 
 ```bash
 vp install
+vp run db:migrate:local   # once, and after each new migration
 vp dev          # http://localhost:3000
 vp check        # format, lint, type check
 vp test run
@@ -22,35 +25,50 @@ UI strings live in `messages/{en,es}.json` (Paraglide, English and Spanish).
 
 ```bash
 vp build
-vp preview      # serve the build locally
+pnpm exec wrangler dev    # serve the build locally, with the Worker and local D1
 ```
 
-Deploy the contents of `dist/client/`. `dist/server/` is only used at build time
-to prerender the HTML shell and is not deployed.
+`vp build` emits the static site in `dist/client/` (the SPA shell is
+`dist/client/index.html`) and the Worker in `dist/server/`. Every route renders
+on the client, so unknown paths are answered with `index.html` (the assets'
+`single-page-application` fallback). Only `/api/*` and `/_serverFn/*` run the
+Worker first.
 
-The shell is emitted as `dist/client/index.html`. Every route renders on the
-client, so a host must answer unknown paths with `index.html` (an SPA fallback),
-otherwise a reload on a deep link returns 404:
+## Database
 
-| Host                             | Fallback                                                                                   |
-| -------------------------------- | ------------------------------------------------------------------------------------------ |
-| Netlify / Cloudflare Pages       | `dist/client/_redirects` with `/* /index.html 200`                                         |
-| Vercel                           | `vercel.json` with `{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }` |
-| GitHub Pages                     | copy `index.html` to `404.html`                                                            |
-| nginx                            | `try_files $uri /index.html;`                                                              |
-| Any static server (e.g. `serve`) | `serve -s dist/client`                                                                     |
+D1 is bound as `DB` and managed with Drizzle. Change `src/server/db/schema.ts`,
+then generate a migration and apply it:
 
-`vp preview` does not apply this fallback.
+```bash
+vp run db:generate          # drizzle-kit generate: writes drizzle/NNNN_*.sql
+vp run db:migrate:local     # wrangler d1 migrations apply --local
+vp run db:migrate:remote    # wrangler d1 migrations apply --remote (production)
+```
+
+After changing bindings in `wrangler.jsonc`, regenerate
+`worker-configuration.d.ts` with `vp run cf-typegen`.
+
+`curl https://lc3.lgrum.xyz/api/health` checks that the Worker reaches D1.
 
 ## Cloudflare deployment
 
-The app deploys to Cloudflare Workers as static assets at
-<https://lc3.lgrum.xyz>. `wrangler.jsonc` configures the SPA fallback and custom
+The app deploys to Cloudflare Workers (free plan) at <https://lc3.lgrum.xyz>.
+`wrangler.jsonc` configures the SPA fallback, the D1 binding and the custom
 domain; Cloudflare provisions the DNS record and HTTPS certificate.
+
+First deploy only: create the database and put its id in `wrangler.jsonc`
+(`d1_databases[0].database_id`):
+
+```bash
+pnpm exec wrangler d1 create lc3-simulator
+```
+
+Then, for every deploy:
 
 ```bash
 pnpm exec wrangler login   # once, or when the login expires
-vp run deploy             # build and deploy dist/client/
+vp run db:migrate:remote   # when there are new migrations
+vp run deploy              # build and deploy the Worker and dist/client/
 ```
 
 Deployment uses the Cloudflare account that owns `lgrum.xyz`. If the login has

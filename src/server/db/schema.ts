@@ -1,0 +1,50 @@
+import { sql } from "drizzle-orm";
+import {
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+
+const createdAt = () =>
+  integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(cast(unixepoch('subsec') * 1000 as integer))`);
+
+/** A published module: unique per owner, ignoring case. */
+export const modules = sqliteTable(
+  "modules",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    ownerUserId: text("owner_user_id").notNull(),
+    name: text("name").notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex("modules_owner_name_unique").on(
+      table.ownerUserId,
+      sql`${table.name} COLLATE NOCASE`,
+    ),
+  ],
+);
+
+/** One published version of a module. Versions never change. */
+export const versions = sqliteTable(
+  "versions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    moduleId: integer("module_id")
+      .notNull()
+      .references(() => modules.id, { onDelete: "cascade" }),
+    /** 1, 2, 3... per module. */
+    number: integer("number").notNull(),
+    source: text("source").notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex("versions_module_number_unique").on(
+      table.moduleId,
+      table.number,
+    ),
+  ],
+);

@@ -10,6 +10,10 @@
     "generate-routes": "tsr generate",
     "build": "vp build",
     "deploy": "vp build && wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply lc3-simulator --local",
+    "db:migrate:remote": "wrangler d1 migrations apply lc3-simulator --remote",
+    "cf-typegen": "wrangler types",
     "preview": "vp preview",
     "lint": "vp lint",
     "check:tailwind": "node scripts/tailwind-intellisense-diagnostics.mjs",
@@ -41,9 +45,11 @@
     "@tanstack/react-start": "latest",
     "@tanstack/react-table": "latest",
     "@tanstack/react-virtual": "^3.14.13",
+    "better-auth": "^1.7.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cn": "^0.3.0",
+    "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",
     "geist": "^1.7.2",
     "lucide-react": "^0.577.0",
@@ -55,6 +61,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.64.0",
     "@inlang/paraglide-js": "^2.13.1",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tailwindcss/language-server": "^0.16.0",
@@ -69,11 +76,12 @@
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/browser-playwright": "4.1.11",
     "babel-plugin-react-compiler": "^1.0.0",
+    "drizzle-kit": "^0.31.11",
     "playwright": "1.57.0",
     "typescript": "^6.0.2",
     "vite": "catalog:",
     "vite-plus": "catalog:",
-    "wrangler": "4.147.0"
+    "wrangler": "4.151.1"
   },
   "devEngines": {
     "packageManager": {
