@@ -196,5 +196,17 @@
   "name_error_folder_invalid": "Use letters, digits, _, - and . in folder names, starting with a letter, digit or _.",
   "upload_skipped": "{file} was not added: {reason}",
   "files_close": "Close the file list",
-  "example_squares": "Square and add, in modules"
+  "example_squares": "Square and add, in modules",
+  "dialog_ok": "OK",
+  "dialog_cancel": "Cancel",
+  "dialog_delete": "Delete",
+  "dialog_replace": "Replace",
+  "upload_skipped_title": "File not added",
+  "folder_delete_blocked_title": "Can't delete {folder}",
+  "move_blocked_title": "Can't move {file}",
+  "tree_move_hint": "Press Ctrl+Shift+D to move the focused file or folder.",
+  "tree_move_started": "Moving {items} into {target}. Press the up and down arrows to choose a folder, Enter to move, Escape to cancel.",
+  "tree_move_target": "Into {target}",
+  "tree_move_done": "Moved.",
+  "tree_move_cancelled": "Move cancelled."
 }

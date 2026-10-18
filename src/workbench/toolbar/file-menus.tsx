@@ -20,6 +20,8 @@ import {
   unusedName,
 } from "../lib/file-names";
 import type { SavedProject } from "../lib/project-store";
+import { useAskDialog } from "../ui/ask-dialog";
+import type { Question } from "../ui/ask-dialog";
 import { Key } from "../ui/key";
 import { useWorkbench } from "../workbench-provider";
 import type { Workbench } from "../workbench-provider";
@@ -34,11 +36,20 @@ function hasOwnWork({ project }: Workbench): boolean {
 
 function useOpenProject() {
   const workbench = useWorkbench();
-  return (project: SavedProject) => {
-    if (hasOwnWork(workbench) && !window.confirm(m.project_replace_confirm()))
+  const { ask, dialog } = useAskDialog();
+  const open = async (project: SavedProject) => {
+    if (
+      hasOwnWork(workbench) &&
+      !(await ask({
+        title: m.project_replace_confirm(),
+        confirm: m.dialog_replace(),
+        destructive: true,
+      }))
+    )
       return;
     openProject(workbench, project);
   };
+  return { open, dialog };
 }
 
 /** The file of the tab the editor shows, or the entry file. */
@@ -50,13 +61,29 @@ function activeFile({ project, tabs }: Workbench): string {
 }
 
 /** Adds a file from disk to the project root, asking before replacing one. */
-function addUpload(workbench: Workbench, name: string, text: string) {
+async function addUpload(
+  workbench: Workbench,
+  ask: (question: Question) => Promise<boolean>,
+  name: string,
+  text: string,
+) {
   const files = workbench.project.getProject().files;
   const problem = fileNameProblem(name, "", files);
   if (problem === "exists") {
-    if (!window.confirm(m.file_replace_one_confirm({ file: name }))) return;
+    const replace = await ask({
+      title: m.file_replace_one_confirm({ file: name }),
+      confirm: m.dialog_replace(),
+      destructive: true,
+    });
+    if (!replace) return;
   } else if (problem) {
-    window.alert(nameProblemText(problem, toFileName(name)));
+    await ask({
+      title: m.upload_skipped_title(),
+      description: m.upload_skipped({
+        file: name,
+        reason: nameProblemText(problem, toFileName(name)),
+      }),
+    });
     return;
   }
   writeFile(workbench, name, text);
@@ -74,6 +101,7 @@ function MenuKey({ children }: { children: React.ReactNode }) {
 export function FileMenu() {
   const workbench = useWorkbench();
   const input = useRef<HTMLInputElement>(null);
+  const { ask, dialog } = useAskDialog();
 
   return (
     <>
@@ -122,25 +150,30 @@ export function FileMenu() {
         onChange={async (event) => {
           const file = event.currentTarget.files?.[0];
           event.currentTarget.value = "";
-          if (file) addUpload(workbench, file.name, await file.text());
+          if (file)
+            await addUpload(workbench, ask, file.name, await file.text());
         }}
       />
+      {dialog}
     </>
   );
 }
 
 export function ExamplesMenu() {
-  const open = useOpenProject();
+  const { open, dialog } = useOpenProject();
   return (
-    <Menu>
-      <MenuKey>{m.menu_examples()}</MenuKey>
-      <MenuPopup align="start">
-        {EXAMPLES.map((example) => (
-          <MenuItem key={example.id} onClick={() => open(example.project)}>
-            {example.title()}
-          </MenuItem>
-        ))}
-      </MenuPopup>
-    </Menu>
+    <>
+      <Menu>
+        <MenuKey>{m.menu_examples()}</MenuKey>
+        <MenuPopup align="start">
+          {EXAMPLES.map((example) => (
+            <MenuItem key={example.id} onClick={() => open(example.project)}>
+              {example.title()}
+            </MenuItem>
+          ))}
+        </MenuPopup>
+      </Menu>
+      {dialog}
+    </>
   );
 }

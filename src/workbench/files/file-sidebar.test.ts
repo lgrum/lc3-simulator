@@ -1,22 +1,26 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { treeRows } from "./file-sidebar";
+import { childPaths } from "./file-sidebar";
 
-describe("treeRows", () => {
-  it("lists each folder before its files, sorted, with depth", () => {
-    expect(
-      treeRows(
-        ["main.asm", "lib/trig.asm", "lib/a/b.asm", "a.asm"],
-        ["lib", "lib/a", "empty"],
-      ),
-    ).toEqual([
-      { kind: "folder", path: "empty", depth: 0 },
-      { kind: "folder", path: "lib", depth: 0 },
-      { kind: "folder", path: "lib/a", depth: 1 },
-      { kind: "file", path: "lib/a/b.asm", depth: 2 },
-      { kind: "file", path: "lib/trig.asm", depth: 1 },
-      { kind: "file", path: "a.asm", depth: 0 },
-      { kind: "file", path: "main.asm", depth: 0 },
+describe("childPaths", () => {
+  const files = ["main.asm", "lib/trig.asm", "lib/a/b.asm", "a.asm"];
+  const folders = ["lib", "lib/a", "empty"];
+
+  it("lists the root's folders, then its files, sorted", () => {
+    expect(childPaths(files, folders, "")).toEqual([
+      "empty",
+      "lib",
+      "a.asm",
+      "main.asm",
     ]);
+  });
+
+  it("lists only what is directly inside a folder", () => {
+    expect(childPaths(files, folders, "lib")).toEqual([
+      "lib/a",
+      "lib/trig.asm",
+    ]);
+    expect(childPaths(files, folders, "lib/a")).toEqual(["lib/a/b.asm"]);
+    expect(childPaths(files, folders, "empty")).toEqual([]);
   });
 });

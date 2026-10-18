@@ -196,5 +196,17 @@
   "name_error_folder_invalid": "Usa letras, dígitos, _, - y . en los nombres de carpeta, empezando por una letra, un dígito o _.",
   "upload_skipped": "{file} no se añadió: {reason}",
   "files_close": "Cerrar la lista de archivos",
-  "example_squares": "Cuadrados y suma, en módulos"
+  "example_squares": "Cuadrados y suma, en módulos",
+  "dialog_ok": "Aceptar",
+  "dialog_cancel": "Cancelar",
+  "dialog_delete": "Eliminar",
+  "dialog_replace": "Reemplazar",
+  "upload_skipped_title": "Archivo no añadido",
+  "folder_delete_blocked_title": "No se puede eliminar {folder}",
+  "move_blocked_title": "No se puede mover {file}",
+  "tree_move_hint": "Pulsa Ctrl+Mayús+D para mover el archivo o la carpeta enfocados.",
+  "tree_move_started": "Moviendo {items} a {target}. Usa las flechas arriba y abajo para elegir una carpeta, Intro para mover y Escape para cancelar.",
+  "tree_move_target": "A {target}",
+  "tree_move_done": "Movido.",
+  "tree_move_cancelled": "Movimiento cancelado."
 }
