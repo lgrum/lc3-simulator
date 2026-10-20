@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { m } from "@/paraglide/messages";
 import type { ModuleSummary, VersionSummary } from "@/server/modules";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { writeFile } from "../actions";
 import { EmptyHint } from "../debug/shared";
@@ -157,8 +158,8 @@ export function MyModulesView() {
   };
 
   return (
-    <div className="h-full overflow-y-auto py-1 text-xs">
-      <ul>
+    <ScrollArea>
+      <ul className="py-1 text-xs">
         {modules.value.map((module) => (
           <li key={module.id}>
             <button
@@ -184,6 +185,6 @@ export function MyModulesView() {
         ))}
       </ul>
       {dialog}
-    </div>
+    </ScrollArea>
   );
 }

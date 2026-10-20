@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { WatchKind } from "@/lib/simulator/controller";
 import { m } from "@/paraglide/messages";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { resolveAddress } from "../lib/format";
 import { useMachineRead, useWorkbench } from "../workbench-provider";
@@ -87,7 +88,7 @@ export function WatchpointsView() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <AddWatchpoint />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         {watchpoints.length === 0 ? (
           <EmptyHint>{m.watchpoints_empty()}</EmptyHint>
         ) : (
@@ -109,7 +110,7 @@ export function WatchpointsView() {
             ))}
           </ul>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 }

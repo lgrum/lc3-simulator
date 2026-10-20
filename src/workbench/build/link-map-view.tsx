@@ -1,5 +1,6 @@
 import { STUBS_FILE } from "@/lib/assembler/linker";
 import { m } from "@/paraglide/messages";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { EmptyHint } from "../debug/shared";
 import { hex } from "../lib/format";
@@ -12,7 +13,7 @@ export function LinkMapView() {
   if (!image) return <EmptyHint>{m.link_map_empty()}</EmptyHint>;
 
   return (
-    <div className="h-full overflow-y-auto">
+    <ScrollArea>
       <table className="w-full text-xs">
         <thead className="sticky top-0 bg-screen text-left text-silk-2">
           <tr>
@@ -70,6 +71,6 @@ export function LinkMapView() {
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollArea>
   );
 }

@@ -91,7 +91,7 @@ export function EditorPanel() {
         onValueChange={(value: string) => tabs.show(value)}
         className="flex min-h-0 flex-1 flex-col"
       >
-        <ScreenTabList className="overflow-x-auto">
+        <ScreenTabList>
           <FilesTrigger />
           {fileTabs.map((file) => (
             <span key={file} className="flex flex-none items-center">

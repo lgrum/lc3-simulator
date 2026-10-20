@@ -1,5 +1,6 @@
 import type { StepEvent } from "@/lib/simulator/controller";
 import { m } from "@/paraglide/messages";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { hex } from "../lib/format";
 import { useMachineRead, useSnapshot } from "../workbench-provider";
@@ -58,7 +59,7 @@ export function TraceView() {
   if (steps.length === 0) return <EmptyHint>{m.trace_empty()}</EmptyHint>;
 
   return (
-    <div className="h-full overflow-y-auto">
+    <ScrollArea>
       <table translate="no" className="w-full font-mono text-xs">
         <caption className="sr-only">{m.trace_caption()}</caption>
         <thead className="sticky top-0 bg-screen text-left font-sans text-silk-2">
@@ -91,6 +92,6 @@ export function TraceView() {
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollArea>
   );
 }

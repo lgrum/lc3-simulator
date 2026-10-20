@@ -374,6 +374,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Scrollers that can't use the ScrollArea component (CodeMirror, the
+       console, the stacked layout on narrow screens) get a thin bar that
+       matches its thumb. ScrollArea viewports hide the native bar. */
+    scrollbar-width: thin;
+    scrollbar-color: --alpha(var(--foreground) / 20%) transparent;
   }
   html {
     @apply font-sans;

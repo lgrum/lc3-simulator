@@ -15,6 +15,7 @@ import {
   listVersionsFn,
 } from "@/server/modules.functions";
 import { Panel, PanelHeader } from "@/workbench/ui/surfaces";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Load<T> =
   | { state: "loading" }
@@ -108,16 +109,18 @@ function SourceView({ versionId }: { versionId: number }) {
         })}
         <span className="ml-2 text-silk-2">{m.editor_read_only()}</span>
       </figcaption>
-      <pre className="min-h-0 overflow-auto bg-screen py-2 font-mono text-[12.5px] leading-5 text-silk">
-        {lines.map((line, i) => (
-          <div key={i} className="flex">
-            <span className="w-10 flex-none pr-3 text-right text-silk-2 select-none">
-              {i + 1}
-            </span>
-            <code className="whitespace-pre">{line}</code>
-          </div>
-        ))}
-      </pre>
+      <ScrollArea clampContentMinWidth={false} className="flex-1 bg-screen">
+        <pre className="w-max min-w-full py-2 font-mono text-[12.5px] leading-5 text-silk">
+          {lines.map((line, i) => (
+            <div key={i} className="flex">
+              <span className="w-10 flex-none pr-3 text-right text-silk-2 select-none">
+                {i + 1}
+              </span>
+              <code className="whitespace-pre">{line}</code>
+            </div>
+          ))}
+        </pre>
+      </ScrollArea>
     </figure>
   );
 }

@@ -1,5 +1,6 @@
 import { BinaryIcon } from "lucide-react";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { m } from "@/paraglide/messages";
 
 import { AccountMenu } from "../account/account-menu";
@@ -30,10 +31,24 @@ function StaleDot() {
 }
 
 export function Toolbar() {
-  const { assembly } = useWorkbench();
   useShortcuts();
   return (
-    <header className="relative flex min-w-0 items-center gap-1.5 overflow-x-auto border-b border-seam px-3 whitespace-nowrap shadow-[0_1px_0_var(--case-highlight)]">
+    <header className="relative min-w-0 border-b border-seam shadow-[0_1px_0_var(--case-highlight)]">
+      {/* Narrow windows scroll the keys sideways with a thin overlay
+          scrollbar instead of the browser's own. */}
+      <ScrollArea scrollFade fill clampContentMinWidth={false}>
+        <div className="flex h-full w-max min-w-full items-center gap-1.5 px-3 whitespace-nowrap">
+          <ToolbarKeys />
+        </div>
+      </ScrollArea>
+    </header>
+  );
+}
+
+function ToolbarKeys() {
+  const { assembly } = useWorkbench();
+  return (
+    <>
       <h1 className="mr-1 text-lg font-semibold text-silk-hi">LC-3</h1>
       <FileMenu />
       <ExamplesMenu />
@@ -56,6 +71,6 @@ export function Toolbar() {
       <RunControls />
       <RunState />
       <AccountMenu />
-    </header>
+    </>
   );
 }

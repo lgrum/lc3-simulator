@@ -4,6 +4,7 @@ import type { Virtualizer } from "@tanstack/react-virtual";
 
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { tracksPc } from "../actions";
 import { toggleBreakpoint } from "../lib/breakpoints";
@@ -273,7 +274,7 @@ function MemoryTable({
         <span role="columnheader">{m.column_instruction()}</span>
         <span role="columnheader">{m.column_ascii()}</span>
       </div>
-      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
+      <ScrollArea viewportRef={scroller} className="flex-1">
         <div
           role="rowgroup"
           className="relative"
@@ -298,7 +299,7 @@ function MemoryTable({
             );
           })}
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

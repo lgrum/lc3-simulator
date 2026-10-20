@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { m } from "@/paraglide/messages";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { resolveAddress } from "../lib/format";
 import { useMachineRead, useWorkbench } from "../workbench-provider";
@@ -101,7 +102,7 @@ export function BreakpointsView() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <AddBreakpoint />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         {breakpoints.length === 0 ? (
           <EmptyHint>{m.breakpoints_empty()}</EmptyHint>
         ) : (
@@ -180,7 +181,7 @@ export function BreakpointsView() {
             </tbody>
           </table>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 }

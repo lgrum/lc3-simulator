@@ -4,6 +4,7 @@ import type { RegisterName } from "@/lib/simulator/controller";
 import { LC3 } from "@/lib/simulator/isa/lc3";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import {
   asciiOf,
@@ -165,91 +166,93 @@ export function RegistersPanel() {
           />
         </div>
       </PanelHeader>
-      <div className="overflow-x-auto px-3 py-2">
-        <table
-          translate="no"
-          className="w-full border-separate border-spacing-y-[3px] text-[13px]"
-        >
-          <caption className="sr-only">{m.registers_caption()}</caption>
-          <thead className="sr-only">
-            <tr>
-              <th scope="col">{m.column_register()}</th>
-              <th scope="col">{m.column_bits()}</th>
-              <th scope="col">{m.column_hex()}</th>
-              <th scope="col">
-                {fractionBits === 0
-                  ? m.column_signed()
-                  : m.column_fixed({ q: `Q${fractionBits}` })}
-              </th>
-              <th scope="col">
-                {fractionBits === 0 ? m.column_unsigned() : undefined}
-              </th>
-              <th scope="col">{m.column_note()}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {snapshot.regs.map((value, i) => (
+      <ScrollArea clampContentMinWidth={false} className="h-auto">
+        <div className="px-3 py-2">
+          <table
+            translate="no"
+            className="w-full border-separate border-spacing-y-[3px] text-[13px]"
+          >
+            <caption className="sr-only">{m.registers_caption()}</caption>
+            <thead className="sr-only">
+              <tr>
+                <th scope="col">{m.column_register()}</th>
+                <th scope="col">{m.column_bits()}</th>
+                <th scope="col">{m.column_hex()}</th>
+                <th scope="col">
+                  {fractionBits === 0
+                    ? m.column_signed()
+                    : m.column_fixed({ q: `Q${fractionBits}` })}
+                </th>
+                <th scope="col">
+                  {fractionBits === 0 ? m.column_unsigned() : undefined}
+                </th>
+                <th scope="col">{m.column_note()}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {snapshot.regs.map((value, i) => (
+                <RegisterRow
+                  key={`R${i}`}
+                  name={`R${i}` as RegisterName}
+                  value={value}
+                  fractionBits={fractionBits}
+                  note={
+                    i === 6 && supervisor
+                      ? m.supervisor_stack()
+                      : value === 0
+                        ? undefined
+                        : asciiOf(value)
+                  }
+                />
+              ))}
+              <tr aria-hidden className="h-2">
+                <td colSpan={6} className="border-b border-edge" />
+              </tr>
               <RegisterRow
-                key={`R${i}`}
-                name={`R${i}` as RegisterName}
-                value={value}
-                fractionBits={fractionBits}
+                name="PC"
+                value={snapshot.pc}
+                note={typeof pcLabel === "string" ? pcLabel : undefined}
+              />
+              <RegisterRow
+                name="IR"
+                value={snapshot.ir}
+                note={mnemonicOf(LC3, snapshot.ir)}
+              />
+              <RegisterRow
+                name="PSR"
+                value={snapshot.psr}
                 note={
-                  i === 6 && supervisor
-                    ? m.supervisor_stack()
-                    : value === 0
-                      ? undefined
-                      : asciiOf(value)
+                  <>
+                    <Flags n={snapshot.n} z={snapshot.z} p={snapshot.p} /> ·{" "}
+                    {supervisor ? m.mode_supervisor() : m.mode_user()} ·{" "}
+                    {m.priority({ level: snapshot.priority })}
+                  </>
                 }
               />
-            ))}
-            <tr aria-hidden className="h-2">
-              <td colSpan={6} className="border-b border-edge" />
-            </tr>
-            <RegisterRow
-              name="PC"
-              value={snapshot.pc}
-              note={typeof pcLabel === "string" ? pcLabel : undefined}
-            />
-            <RegisterRow
-              name="IR"
-              value={snapshot.ir}
-              note={mnemonicOf(LC3, snapshot.ir)}
-            />
-            <RegisterRow
-              name="PSR"
-              value={snapshot.psr}
-              note={
-                <>
-                  <Flags n={snapshot.n} z={snapshot.z} p={snapshot.p} /> ·{" "}
-                  {supervisor ? m.mode_supervisor() : m.mode_user()} ·{" "}
-                  {m.priority({ level: snapshot.priority })}
-                </>
-              }
-            />
-            <RegisterRow
-              name="MCR"
-              value={snapshot.mcr}
-              note={
-                snapshot.mcr & 0x8000 ? m.clock_running() : m.clock_stopped()
-              }
-            />
-            {supervisor ? (
               <RegisterRow
-                name="USP"
-                value={snapshot.savedUSP}
-                note={m.saved_usp()}
+                name="MCR"
+                value={snapshot.mcr}
+                note={
+                  snapshot.mcr & 0x8000 ? m.clock_running() : m.clock_stopped()
+                }
               />
-            ) : (
-              <RegisterRow
-                name="SSP"
-                value={snapshot.savedSSP}
-                note={m.saved_ssp()}
-              />
-            )}
-          </tbody>
-        </table>
-      </div>
+              {supervisor ? (
+                <RegisterRow
+                  name="USP"
+                  value={snapshot.savedUSP}
+                  note={m.saved_usp()}
+                />
+              ) : (
+                <RegisterRow
+                  name="SSP"
+                  value={snapshot.savedSSP}
+                  note={m.saved_ssp()}
+                />
+              )}
+            </tbody>
+          </table>
+        </div>
+      </ScrollArea>
     </Panel>
   );
 }
