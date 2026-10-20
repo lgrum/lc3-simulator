@@ -31,6 +31,26 @@ export class LexerError extends Error {
   }
 }
 
+/** Escape sequences in string literals, as the standard lc3as tools accept. */
+const ESCAPES = new Map([
+  ["n", "\n"],
+  ["t", "\t"],
+  ["r", "\r"],
+  ["\\", "\\"],
+  ['"', '"'],
+  ["0", "\0"],
+]);
+
+/** The characters of a string literal token, with its escapes replaced. */
+export function stringValue(lexeme: string): string {
+  return lexeme
+    .slice(1, -1)
+    .replace(
+      /\\(.)/g,
+      (sequence, escaped: string) => ESCAPES.get(escaped) ?? sequence,
+    );
+}
+
 export class Lexer {
   private source: Uint8Array;
   private start: number;
@@ -227,6 +247,23 @@ export class Lexer {
         case asciiByte('"'): {
           this.advance();
           return this.makeToken("string_literal");
+        }
+        case asciiByte("\\"): {
+          const column = this.column;
+          this.advance();
+          const escaped = this.peek();
+          // A backslash before the line ends is left for the checks above.
+          if (escaped === null || escaped === asciiByte("\n")) break;
+          if (!ESCAPES.has(String.fromCharCode(escaped))) {
+            throw new LexerError(
+              `Unknown escape sequence '\\${String.fromCharCode(escaped)}'`,
+              this.line,
+              this.column + 1,
+              { line: this.line, column, endColumn: column + 2 },
+            );
+          }
+          this.advance();
+          break;
         }
         default:
           this.advance();

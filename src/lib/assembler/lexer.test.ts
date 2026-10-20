@@ -59,6 +59,35 @@ describe("assembler lexer", () => {
     }
   });
 
+  it("keeps escaped quotes inside a string", () => {
+    expect(tokenize('"say \\"hi\\"\\\\" RET\n').slice(0, 2)).toEqual([
+      {
+        type: "string_literal",
+        lexeme: '"say \\"hi\\"\\\\"',
+        line: 1,
+        column: 1,
+      },
+      { type: "opcode", lexeme: "RET", line: 1, column: 16 },
+    ]);
+  });
+
+  it("rejects unknown escape sequences at the backslash", () => {
+    try {
+      tokenize('.STRINGZ "ok\\q"\n');
+      throw new Error("Expected a LexerError");
+    } catch (error) {
+      expect(error).toBeInstanceOf(LexerError);
+      expect(error).toMatchObject({
+        text: "Unknown escape sequence '\\q'",
+        position: { line: 1, column: 13, endColumn: 15 },
+      });
+    }
+  });
+
+  it("treats a backslash at the end of the line as unterminated", () => {
+    expect(() => tokenize('.STRINGZ "open\\\n')).toThrow("Unterminated string");
+  });
+
   it("emits EOF after a comment without a newline", () => {
     expect(tokenize("RET\n; trailing comment").at(-1)).toEqual({
       type: "eof",

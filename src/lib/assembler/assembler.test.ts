@@ -30,6 +30,16 @@ describe("assembler", () => {
     expect(symbols.get("TARGET")).toBe(0x3006);
   });
 
+  it("stores .STRINGZ escape sequences as single characters", () => {
+    const { words } = assembleSource(
+      '.ORIG x3000\n.STRINGZ "a\\n\\t\\r\\\\\\"\\0b"\n.END\n',
+    );
+
+    expect(words).toEqual([
+      0x61, 0x0a, 0x09, 0x0d, 0x5c, 0x22, 0x00, 0x62, 0x00,
+    ]);
+  });
+
   it("encodes R7 and instruction-specific offset widths", () => {
     const { words } = assembleSource(
       ".ORIG x3000\nADD R7, R7, #-1\nJSR #512\nLDR R1, R2, #31\nTRAP xFF\n.END\n",

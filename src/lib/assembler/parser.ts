@@ -1,4 +1,4 @@
-import { parseRegister } from "./lexer";
+import { parseRegister, stringValue } from "./lexer";
 import type {
   Directive,
   DirectiveOperand,
@@ -160,8 +160,7 @@ class Parser {
         if (!this.checkToken("string_literal")) {
           throw this.error("Expected string literal after .STRINGZ");
         }
-        const lexeme = this.advance().lexeme;
-        return { type: "stringz", value: lexeme.slice(1, -1) };
+        return { type: "stringz", value: stringValue(this.advance().lexeme) };
       }
       default:
         throw this.error(`Unknown directive '${token.lexeme}'`, token);

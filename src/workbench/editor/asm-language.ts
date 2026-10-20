@@ -35,7 +35,12 @@ function asmParser(vocabulary: AsmVocabulary): StreamParser<null> {
       }
       if (stream.peek() === '"') {
         stream.next();
-        while (!stream.eol() && stream.next() !== '"');
+        // A backslash escapes the next character, so \" doesn't end it.
+        while (!stream.eol()) {
+          const ch = stream.next();
+          if (ch === '"') break;
+          if (ch === "\\") stream.next();
+        }
         return "string";
       }
       if (stream.match(/^\.[A-Za-z]+/)) return "meta";
