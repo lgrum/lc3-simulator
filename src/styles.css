@@ -59,6 +59,7 @@
   --syntax-directive: #7a3db8;
   --syntax-number: #2b7a30;
   --syntax-string: #b04a1f;
+  --syntax-escape: #a3127a;
   --syntax-comment: #7c8475;
   --syntax-label: #0f0f0d;
   --key-border: #bdb8ad;
@@ -169,6 +170,7 @@
   --syntax-directive: #d2a8ff;
   --syntax-number: #a6e3a1;
   --syntax-string: #e6a07e;
+  --syntax-escape: #f5a3d0;
   --syntax-comment: #6d7767;
   --syntax-label: #ffffff;
   --key-border: #4a4d52;
