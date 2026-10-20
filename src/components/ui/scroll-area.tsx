@@ -28,10 +28,13 @@ export function ScrollArea({
       className={cn("size-full min-h-0", className)}
       {...props}
     >
+      {/* Positioned, so absolutely positioned content (e.g. sr-only labels)
+          is clipped and scrolled by the viewport instead of escaping it and
+          widening the page. */}
       <ScrollAreaPrimitive.Viewport
         ref={viewportRef}
         className={cn(
-          "h-full rounded-[inherit] outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "relative h-full rounded-[inherit] outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           overscrollContain &&
             "data-has-overflow-y:overscroll-y-contain data-has-overflow-x:overscroll-x-contain",
           scrollFade &&

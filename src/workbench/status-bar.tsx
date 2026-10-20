@@ -93,14 +93,16 @@ function ThemeSwitch() {
 export function StatusBar() {
   const { privilege } = useSnapshot();
   return (
-    <footer className="flex items-center gap-5 border-t border-seam bg-status px-3.5 text-xs text-silk-2">
-      <span>{m.status_isa()}</span>
-      <span>
+    // One line at every width: on a phone the ISA label shortens first, so
+    // the bar never grows past its row and the switches stay visible.
+    <footer className="flex min-w-0 items-center gap-5 overflow-hidden border-t border-seam bg-status px-3.5 text-xs whitespace-nowrap text-silk-2">
+      <span className="min-w-0 truncate">{m.status_isa()}</span>
+      <span className="flex-none">
         {privilege === "user"
           ? m.status_mode_user()
           : m.status_mode_supervisor()}
       </span>
-      <span className="ml-auto flex items-center gap-4">
+      <span className="ml-auto flex flex-none items-center gap-4">
         <ThemeSwitch />
         <LanguageSwitch />
       </span>
