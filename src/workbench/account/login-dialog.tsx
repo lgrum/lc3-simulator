@@ -4,7 +4,6 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogPanel,
@@ -67,14 +66,13 @@ export function LoginDialog({
       }}
     >
       <DialogPopup className="max-w-sm">
-        <form onSubmit={(event) => void submit(event)}>
+        {/* `contents` keeps the header, panel and footer as the popup's flex
+            children, so the panel's scroll area sizes to its content. */}
+        <form className="contents" onSubmit={(event) => void submit(event)}>
           <DialogHeader>
             <DialogTitle className="text-base">
               {m.account_log_in()}
             </DialogTitle>
-            <DialogDescription>
-              {m.account_login_description()}
-            </DialogDescription>
           </DialogHeader>
           <DialogPanel className="flex flex-col gap-4">
             <Field>

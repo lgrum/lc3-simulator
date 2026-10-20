@@ -213,7 +213,6 @@
   "account_log_out": "Log out",
   "account_group": "Group {number}",
   "account_logged_in_as": "Logged in as {name}",
-  "account_login_description": "Groups log in with their group number, professors with their username.",
   "account_username": "Group number or username",
   "account_password": "Password",
   "account_login_wrong": "Wrong group number, username or password.",

@@ -213,7 +213,6 @@
   "account_log_out": "Cerrar sesión",
   "account_group": "Grupo {number}",
   "account_logged_in_as": "Sesión iniciada como {name}",
-  "account_login_description": "Los grupos inician sesión con su número de grupo; los profesores, con su nombre de usuario.",
   "account_username": "Número de grupo o nombre de usuario",
   "account_password": "Contraseña",
   "account_login_wrong": "Número de grupo, usuario o contraseña incorrectos.",

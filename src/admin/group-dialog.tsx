@@ -142,7 +142,7 @@ export function GroupDialog({
     >
       <DialogPopup className="max-w-sm">
         {shown && (
-          <form onSubmit={(event) => void submit(event)}>
+          <form className="contents" onSubmit={(event) => void submit(event)}>
             <DialogHeader>
               <DialogTitle className="text-base">{titleOf(shown)}</DialogTitle>
               {shown.kind === "reset" && (
