@@ -8,6 +8,9 @@ export type Viewer =
   | { kind: "group"; userId: string; group: number; name: string }
   | { kind: "admin"; userId: string; username: string; name: string };
 
+/** Why a sign-in failed, for the login dialog. */
+export type SignInProblem = "wrong" | "rate-limited" | "unreachable";
+
 /** The fields of a Better Auth user that decide who they are. */
 export type AuthUser = {
   id: string;

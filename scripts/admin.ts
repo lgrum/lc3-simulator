@@ -6,10 +6,11 @@
 //   vp run admin:delete <username> [--local]
 //
 // Without --local the script writes to the production D1 database. The
-// password is hashed here with the same function and pepper as the Worker, so
-// PASSWORD_PEPPER must be set in the environment (with --local it is read
-// from .dev.vars). Without --password a 4-word token is generated and shown
-// once.
+// password is hashed here with the same function and pepper as the Worker.
+// The pepper comes from the PASSWORD_PEPPER environment variable, or else
+// from a KEY=value file: --secrets <file> (default production.secrets.local),
+// or .dev.vars with --local. Without --password a 4-word token is generated
+// and shown once.
 //
 // Runs on Node with type stripping: node --experimental-strip-types.
 
@@ -36,11 +37,11 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-/** KEY=value lines, as in .dev.vars. */
-function readDevVars(): Record<string, string> {
-  if (!existsSync(".dev.vars")) return {};
+/** KEY=value lines, as in .dev.vars; empty if the file doesn't exist. */
+function readEnvFile(path: string): Record<string, string> {
+  if (!existsSync(path)) return {};
   const vars: Record<string, string> = {};
-  for (const line of readFileSync(".dev.vars", "utf8").split(/\r?\n/)) {
+  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
     const match = /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
     if (match) vars[match[1]] = match[2].replace(/^"(.*)"$/, "$1");
   }
@@ -111,6 +112,7 @@ async function main() {
       local: { type: "boolean", default: false },
       password: { type: "boolean", default: false },
       name: { type: "string" },
+      secrets: { type: "string", default: "production.secrets.local" },
     },
   });
   const [command = "", rawUsername = ""] = positionals;
@@ -142,10 +144,13 @@ async function main() {
   }
 
   const environment: Record<string, string | undefined> = process.env;
+  const secretsFile = local ? ".dev.vars" : values.secrets;
   const pepper =
-    environment.PASSWORD_PEPPER ??
-    (local ? readDevVars().PASSWORD_PEPPER : undefined);
-  if (!pepper) fail("Set PASSWORD_PEPPER to the Worker's pepper secret.");
+    environment.PASSWORD_PEPPER ?? readEnvFile(secretsFile).PASSWORD_PEPPER;
+  if (!pepper)
+    fail(
+      `No pepper: set PASSWORD_PEPPER, or pass --secrets <file> with a PASSWORD_PEPPER=... line (${secretsFile} has none).`,
+    );
   const iterations = Number(
     environment.PBKDF2_ITERATIONS ?? configuredIterations(),
   );
@@ -167,7 +172,7 @@ async function main() {
   } else {
     const result = execute(
       [
-        `UPDATE account SET password = ${quote(hash)}, updated_at = ${now} WHERE provider_id = 'credential' AND user_id = ${adminId} RETURNING id;`,
+        `UPDATE account SET password = ${quote(hash)}, updated_at = ${quote(now)} WHERE provider_id = 'credential' AND user_id = ${adminId} RETURNING id;`,
         // A new password ends the admin's sessions.
         `DELETE FROM session WHERE user_id = ${adminId};`,
       ].join("\n"),

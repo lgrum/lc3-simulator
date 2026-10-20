@@ -1,6 +1,8 @@
 import { env, waitUntil } from "cloudflare:workers";
+import { eq } from "drizzle-orm";
 
 import { db } from "../db/client.server";
+import { account } from "../db/schema";
 import { createAuth } from "./options";
 
 const auth = createAuth({
@@ -9,6 +11,12 @@ const auth = createAuth({
   hashing: {
     pepper: env.PASSWORD_PEPPER,
     iterations: Number(env.PBKDF2_ITERATIONS),
+  },
+  replaceHash: async (oldHash, newHash) => {
+    await db
+      .update(account)
+      .set({ password: newHash, updatedAt: new Date() })
+      .where(eq(account.password, oldHash));
   },
 });
 

@@ -10,4 +10,5 @@ export const auth = createAuth({
   db: drizzle({} as D1Database, { schema }),
   secret: "schema-generation-only-secret-0000",
   hashing: { pepper: "unused", iterations: 1 },
+  replaceHash: () => Promise.resolve(),
 });

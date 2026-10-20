@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
-import { Route as ApiAdminPbkdf2BenchRouteImport } from './routes/api/admin/pbkdf2-bench'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -30,11 +29,6 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminPbkdf2BenchRoute = ApiAdminPbkdf2BenchRouteImport.update({
-  id: '/api/admin/pbkdf2-bench',
-  path: '/api/admin/pbkdf2-bench',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -45,14 +39,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/admin/pbkdf2-bench': typeof ApiAdminPbkdf2BenchRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/admin/pbkdf2-bench': typeof ApiAdminPbkdf2BenchRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
@@ -60,29 +52,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/admin/pbkdf2-bench': typeof ApiAdminPbkdf2BenchRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    '/' | '/admin' | '/api/health' | '/api/admin/pbkdf2-bench' | '/api/auth/$'
+  fullPaths: '/' | '/admin' | '/api/health' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/api/health' | '/api/admin/pbkdf2-bench' | '/api/auth/$'
-  id:
-    | '__root__'
-    | '/'
-    | '/admin'
-    | '/api/health'
-    | '/api/admin/pbkdf2-bench'
-    | '/api/auth/$'
+  to: '/' | '/admin' | '/api/health' | '/api/auth/$'
+  id: '__root__' | '/' | '/admin' | '/api/health' | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ApiHealthRoute: typeof ApiHealthRoute
-  ApiAdminPbkdf2BenchRoute: typeof ApiAdminPbkdf2BenchRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -109,13 +92,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/pbkdf2-bench': {
-      id: '/api/admin/pbkdf2-bench'
-      path: '/api/admin/pbkdf2-bench'
-      fullPath: '/api/admin/pbkdf2-bench'
-      preLoaderRoute: typeof ApiAdminPbkdf2BenchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -130,7 +106,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ApiHealthRoute: ApiHealthRoute,
-  ApiAdminPbkdf2BenchRoute: ApiAdminPbkdf2BenchRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

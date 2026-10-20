@@ -4,6 +4,7 @@ import {
   hashIterations,
   hashPassword,
   needsRehash,
+  verifyAndRehash,
   verifyPassword,
 } from "./password";
 
@@ -64,6 +65,48 @@ describe("verifyPassword", () => {
   it("refuses hashes in other formats", async () => {
     expect(await verifyPassword("abc:def", "pw", "p")).toBe(false);
     expect(await verifyPassword("pbkdf2-sha256$x$a$b", "pw", "p")).toBe(false);
+  });
+});
+
+describe("verifyAndRehash", () => {
+  it("rehashes a matching password made with another count", async () => {
+    const stored = await hashPassword("pw", { ...hashing, iterations: 500 });
+    const replaced: Array<[string, string]> = [];
+    const ok = await verifyAndRehash(stored, "pw", hashing, (from, to) => {
+      replaced.push([from, to]);
+      return Promise.resolve();
+    });
+    expect(ok).toBe(true);
+    expect(replaced).toHaveLength(1);
+    expect(replaced[0][0]).toBe(stored);
+    expect(hashIterations(replaced[0][1])).toBe(hashing.iterations);
+    expect(await verifyPassword(replaced[0][1], "pw", hashing.pepper)).toBe(
+      true,
+    );
+  });
+
+  it("leaves hashes made with the configured count alone", async () => {
+    const stored = await hashPassword("pw", hashing);
+    let calls = 0;
+    expect(
+      await verifyAndRehash(stored, "pw", hashing, () => {
+        calls++;
+        return Promise.resolve();
+      }),
+    ).toBe(true);
+    expect(calls).toBe(0);
+  });
+
+  it("never rehashes a wrong password", async () => {
+    const stored = await hashPassword("pw", { ...hashing, iterations: 500 });
+    let calls = 0;
+    expect(
+      await verifyAndRehash(stored, "nope", hashing, () => {
+        calls++;
+        return Promise.resolve();
+      }),
+    ).toBe(false);
+    expect(calls).toBe(0);
   });
 });
 

@@ -1,7 +1,6 @@
-import type { Viewer } from "@/server/access";
+import type { SignInProblem, Viewer } from "@/server/access";
 
-/** Why a sign-in failed, for the login dialog. */
-export type SignInProblem = "wrong" | "rate-limited" | "unreachable";
+export type { SignInProblem };
 
 /** How the store reaches the server; replaced in tests. */
 export type AccountBackend = {

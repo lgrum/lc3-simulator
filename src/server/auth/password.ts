@@ -149,3 +149,21 @@ export async function verifyPassword(
   const hash = await derive(password, pepper, parsed.salt, parsed.iterations);
   return equalBytes(hash, parsed.hash);
 }
+
+/**
+ * Verifies a password and, when it matches but was hashed with another
+ * iteration count, hashes it again with the configured count and passes both
+ * hashes to `replace` to store. The stored hash is salted, so it identifies
+ * the account without looking it up.
+ */
+export async function verifyAndRehash(
+  stored: string,
+  password: string,
+  hashing: Hashing,
+  replace: (oldHash: string, newHash: string) => Promise<void>,
+): Promise<boolean> {
+  if (!(await verifyPassword(stored, password, hashing.pepper))) return false;
+  if (needsRehash(stored, hashing.iterations))
+    await replace(stored, await hashPassword(password, hashing));
+  return true;
+}

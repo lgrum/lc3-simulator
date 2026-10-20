@@ -12,7 +12,7 @@
   },
   "vars": {
     // PBKDF2 iterations for new password hashes; see README "Password hashing".
-    "PBKDF2_ITERATIONS": "10000",
+    "PBKDF2_ITERATIONS": "7000",
   },
   // Secrets, set with `wrangler secret put` (and in .dev.vars locally):
   // BETTER_AUTH_SECRET, PASSWORD_PEPPER.
@@ -20,10 +20,12 @@
     {
       "binding": "DB",
       "database_name": "lc3-simulator",
-      // Replace with the id printed by `wrangler d1 create lc3-simulator`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "3cb27544-9e00-4a1d-8d27-8643b93d4c72",
       "migrations_dir": "drizzle",
     },
   ],
   "routes": [{ "pattern": "lc3.lgrum.xyz", "custom_domain": true }],
+  // `wrangler dev` presents requests as coming to the route's domain; over
+  // https, as in production, so Better Auth trusts their origin.
+  "dev": { "upstream_protocol": "https" },
 }
