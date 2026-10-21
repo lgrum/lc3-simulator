@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>Guía de módulos de la calculadora</title>
+    <script>
+      // Sigue el tema elegido en el workbench (mismo origen, misma clave).
+      try {
+        var theme = localStorage.getItem("lc3sim.theme");
+        if (theme === "light" || theme === "dark")
+          document.documentElement.dataset.theme = theme;
+      } catch (error) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap"
+    />
+    <style>
+      /* Una sola columna de lectura, como una guía de laboratorio impresa desde la pantalla del simulador. */
+      :root {
+        --bg: #f3f1ea;
+        --paper: #fcfbf7;
+        --line: #e2ddd1;
+        --ink: #36342e;
+        --ink-2: #67635a;
+        --ink-hi: #1c1a16;
+        --amber: #a35400;
+        --amber-soft: #f6e6cc;
+        --err: #b8321a;
+        --code-bg: #f1eee5;
+        --font-display: "Chakra Petch", system-ui, sans-serif;
+        --font-body: "Chakra Petch", system-ui, sans-serif;
+        --font-mono:
+          "Martian Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0b0c0a;
+          --paper: #12140f;
+          --line: #23271f;
+          --ink: #c9c4b8;
+          --ink-2: #8f8b81;
+          --ink-hi: #ede8dc;
+          --amber: #ffb547;
+          --amber-soft: #2e2414;
+          --err: #ff9a80;
+          --code-bg: #0f110d;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0b0c0a;
+        --paper: #12140f;
+        --line: #23271f;
+        --ink: #c9c4b8;
+        --ink-2: #8f8b81;
+        --ink-hi: #ede8dc;
+        --amber: #ffb547;
+        --amber-soft: #2e2414;
+        --err: #ff9a80;
+        --code-bg: #0f110d;
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: 16px;
+        line-height: 1.6;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+        padding-block: 40px 64px;
+      }
+      .sheet {
+        max-width: 760px;
+        margin: 0 auto;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: clamp(20px, 5vw, 48px);
+        display: grid;
+        gap: 40px;
+      }
+      header {
+        display: grid;
+        gap: 12px;
+      }
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        align-items: center;
+      }
+      .status {
+        color: var(--amber);
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        padding: 1px 10px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        color: var(--ink-hi);
+        text-wrap: balance;
+        margin: 0;
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(30px, 6vw, 42px);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      h2 {
+        font-size: 23px;
+        font-weight: 600;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        align-items: baseline;
+      }
+      h2 .addr {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--amber);
+        letter-spacing: 0.02em;
+      }
+      h3 {
+        font-size: 17px;
+        font-weight: 600;
+      }
+      p,
+      ul,
+      ol {
+        margin: 0;
+        max-width: 65ch;
+      }
+      ul,
+      ol {
+        padding-left: 1.3em;
+        display: grid;
+        gap: 6px;
+      }
+      .lede {
+        font-size: 18px;
+        color: var(--ink);
+      }
+      section {
+        display: grid;
+        gap: 16px;
+        min-width: 0;
+      }
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.84em;
+        background: var(--code-bg);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0 4px;
+        color: var(--ink-hi);
+      }
+      pre {
+        margin: 0;
+        background: var(--code-bg);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--amber);
+        border-radius: 4px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--ink-hi);
+      }
+      pre code {
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: inherit;
+      }
+      .c {
+        color: var(--ink-2);
+      }
+      .k {
+        color: var(--amber);
+      }
+      .file {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink-2);
+        margin-bottom: -10px;
+      }
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14.5px;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      th {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        font-weight: 500;
+        background: var(--code-bg);
+      }
+      td code {
+        white-space: nowrap;
+      }
+      .msg {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        color: var(--ink-hi);
+      }
+      .yes {
+        color: var(--amber);
+        font-weight: 600;
+      }
+      .no {
+        color: var(--err);
+        font-weight: 600;
+      }
+      .note {
+        background: var(--amber-soft);
+        border-radius: 4px;
+        padding: 12px 16px;
+        max-width: none;
+      }
+      .regs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px;
+      }
+      .reg {
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 10px 12px;
+        display: grid;
+        gap: 2px;
+      }
+      .reg b {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: var(--amber);
+        font-weight: 500;
+      }
+      .reg span {
+        font-size: 14px;
+      }
+      nav ol {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        font-size: 14px;
+      }
+      nav a {
+        color: var(--ink-2);
+        text-decoration: none;
+        border-bottom: 1px dotted var(--ink-2);
+      }
+      nav a:hover,
+      nav a:focus-visible {
+        color: var(--amber);
+        border-color: var(--amber);
+      }
+      a:focus-visible {
+        outline: 2px solid var(--amber);
+        outline-offset: 2px;
+      }
+      footer {
+        font-size: 13px;
+        color: var(--ink-2);
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="sheet">
+      <header>
+        <h1>Guía de módulos de la calculadora</h1>
+        <p class="lede">
+          Cada grupo escribe uno o más módulos: archivos <code>.asm</code> con
+          las funciones de la calculadora que le tocaron. El programa
+          <code>main</code> de los profesores las llama. No eliges dónde va tu
+          código en memoria; lo coloca el enlazador.
+        </p>
+        <nav aria-label="Secciones">
+          <ol>
+            <li><a href="#modulo">Escribir un módulo</a></li>
+            <li><a href="#llamadas">Llamar a otro archivo</a></li>
+            <li><a href="#convencion">Convención de llamada</a></li>
+            <li><a href="#pruebas">Probar en local</a></li>
+            <li><a href="#publicar">Publicar</a></li>
+            <li><a href="#errores">Errores frecuentes</a></li>
+          </ol>
+        </nav>
+      </header>
+
+      <section id="modulo">
+        <h2>Escribir un módulo <span class="addr">x0000 + base</span></h2>
+        <ul>
+          <li>
+            <strong>El nombre del archivo es el nombre del módulo.</strong>
+            <code>trig.asm</code> es el módulo <code>trig</code>. Usa solo
+            letras, dígitos y <code>_</code>, empezando por una letra o
+            <code>_</code>. Sin <code>-</code>.
+          </li>
+          <li>
+            <strong><code>.ORIG</code> es opcional y se ignora</strong> en los
+            módulos. El enlazador coloca tu código después de
+            <code>main</code> y de los demás módulos. Solo cuenta el
+            <code>.ORIG</code> del archivo de entrada.
+          </li>
+          <li>
+            <strong>Tus etiquetas son tuyas.</strong> Un <code>LOOP</code> en tu
+            archivo nunca choca con el <code>LOOP</code> de otro grupo.
+          </li>
+          <li>
+            Sigue usando instrucciones relativas al PC dentro de tu archivo como
+            siempre. Funcionan igual después de que el enlazador mueva tu
+            código.
+          </li>
+        </ul>
+        <p class="file">trig.asm · grupo 7</p>
+        <pre><code><span class="c">; SIN: R0 = ángulo en radianes, Q14
+;      devuelve R0 = sin(ángulo), Q14</span>
+SIN     ADD  R6, R6, #-2      <span class="c">; apila R1 y R2 (ver convención)</span>
+        STR  R1, R6, #0
+        STR  R2, R6, #1
+        <span class="c">; ... tu algoritmo ...</span>
+        LDR  R1, R6, #0       <span class="c">; los desapila en el mismo orden</span>
+        LDR  R2, R6, #1
+        ADD  R6, R6, #2       <span class="c">; R6 vuelve a su valor de entrada</span>
+        RET
+        .END</code></pre>
+      </section>
+
+      <section id="llamadas">
+        <h2>Llamar a una etiqueta de otro archivo</h2>
+        <p>
+          Declárala con <code>.EXTERNAL</code>, escrita como
+          <code>MODULO-ETIQUETA</code>: el nombre del archivo, un
+          <code>-</code> y luego la etiqueta. La parte del módulo no distingue
+          mayúsculas de minúsculas; la de la etiqueta sí.
+        </p>
+        <p class="file">main.asm</p>
+        <pre><code>        .ORIG x3000
+        <span class="k">.EXTERNAL TRIG-SIN</span>    <span class="c">; etiqueta SIN de trig.asm</span>
+        LD   R0, ANGLE
+        LD   R5, SIN_PTR      <span class="c">; dirección completa de 16 bits de TRIG-SIN</span>
+        JSRR R5
+        HALT
+ANGLE   .FILL x1922           <span class="c">; π/8 ≈ 0.3927 en Q14</span>
+SIN_PTR .FILL TRIG-SIN
+        .END</code></pre>
+        <p>
+          <strong
+            >Usa <code>.FILL</code> + <code>JSRR</code> en toda llamada a otro
+            archivo.</strong
+          >
+          <code>JSR</code> solo alcanza ±1024 palabras, y con más de 20 módulos
+          uno tras otro, la mayoría de los destinos quedan más lejos.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Dónde usas una etiqueta externa</th>
+                <th>¿Se permite?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>.FILL TRIG-SIN</code></td>
+                <td><span class="yes">Siempre</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <code>JSR</code>, <code>BR</code>, <code>LD</code>,
+                  <code>LDI</code>, <code>ST</code>, <code>STI</code>,
+                  <code>LEA</code>
+                </td>
+                <td>
+                  <span class="yes">Solo si está al alcance</span>; si no, un
+                  error de enlace te indica usar <code>.FILL</code> +
+                  <code>JSRR</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>TRAP</code>, desplazamientos de <code>LDR</code>/<code
+                    >STR</code
+                  >
+                </td>
+                <td><span class="no">Nunca</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Qué puedes importar</h3>
+        <ul>
+          <li>
+            Etiquetas de los otros módulos de <strong>tu propio grupo</strong>.
+          </li>
+          <li>
+            No de tu propio archivo (usa la etiqueta directamente), ni de
+            <code>main</code>, ni del sistema operativo (usa <code>TRAP</code>),
+            ni de los módulos de otros grupos.
+          </li>
+        </ul>
+      </section>
+
+      <section id="convencion">
+        <h2>Convención de llamada</h2>
+        <p>
+          Todos los módulos siguen las mismas reglas, así
+          <code>main</code> puede llamar al código de cualquier grupo de la
+          misma forma.
+        </p>
+        <div class="regs">
+          <div class="reg"><b>R0, R1, R2</b><span>Argumentos</span></div>
+          <div class="reg"><b>R0</b><span>Resultado</span></div>
+          <div class="reg">
+            <b>R1–R5</b><span>Los conserva la subrutina</span>
+          </div>
+          <div class="reg">
+            <b>R6</b
+            ><span
+              >Puntero de pila. Al volver debe tener el mismo valor que al
+              entrar.</span
+            >
+          </div>
+          <div class="reg">
+            <b>R7</b
+            ><span
+              >Dirección de retorno. Apílala antes de llamar a otra
+              subrutina.</span
+            >
+          </div>
+        </div>
+        <ul>
+          <li>
+            <strong>Guarda los registros en la pila, con R6.</strong> R6 es el
+            puntero de pila por convención en la LC-3, y el sistema operativo lo
+            gestiona así: cada <code>TRAP</code> cambia a la pila del sistema y
+            al volver te devuelve tu R6 intacto. No reserves zonas
+            <code>.BLKW</code> solo para guardar registros.
+          </li>
+          <li>
+            La pila crece hacia direcciones menores. Para apilar, resta a R6 y
+            escribe con <code>STR</code>; para desapilar, lee con
+            <code>LDR</code> y suma a R6. Desapila todo lo que apilaste antes de
+            <code>RET</code>.
+          </li>
+          <li>
+            No inicialices R6 ni lo uses como registro de propósito general. El
+            simulador ya lo apunta a la pila de usuario al cargar el programa.
+          </li>
+          <li>
+            <strong>No hay un formato numérico común.</strong> Cada función
+            elige el formato Q que necesita (por ejemplo Q14 para
+            <code>SIN</code>/<code>COS</code>, Q3 o Q4 para <code>EXP</code>).
+            Escríbelo en un comentario encima de la etiqueta. Quien llama
+            convierte sus argumentos antes de la llamada.
+          </li>
+        </ul>
+        <p class="file">Llamar a otra subrutina desde una subrutina</p>
+        <pre><code>        ADD  R6, R6, #-1      <span class="c">; apila R7: JSRR lo va a sobrescribir</span>
+        STR  R7, R6, #0
+        JSRR R4               <span class="c">; R4 = dirección cargada con .FILL (y apilado al entrar)</span>
+        LDR  R7, R6, #0       <span class="c">; desapila R7</span>
+        ADD  R6, R6, #1
+        RET</code></pre>
+      </section>
+
+      <section id="pruebas">
+        <h2>Probar en local</h2>
+        <p>
+          No puedes ver <code>main</code> ni el código de otros grupos, así que
+          prueba con tu propio <code>main.asm</code> pequeño.
+        </p>
+        <ol>
+          <li>
+            Crea tus archivos de módulo y un <code>main.asm</code> en la barra
+            lateral de archivos.
+          </li>
+          <li>
+            Haz clic derecho en <code>main.asm</code> y elige
+            <strong>Usar como entrada</strong>.
+          </li>
+          <li>
+            Haz clic en <strong>Ensamblar</strong>. Los errores de todos los
+            archivos aparecen en la pestaña <strong>Problemas</strong>.
+          </li>
+          <li>
+            Abre la pestaña <strong>Mapa de enlace</strong> para ver dónde quedó
+            cada módulo en memoria.
+          </li>
+          <li>
+            Pon puntos de interrupción en cualquier archivo. El editor sigue al
+            PC hasta el archivo en el que esté.
+          </li>
+        </ol>
+        <p class="note">
+          Tus archivos se quedan en este navegador hasta que publiques. Descarga
+          el proyecto como <code>.zip</code> desde la barra lateral para
+          llevarlo a otro ordenador.
+        </p>
+      </section>
+
+      <section id="publicar">
+        <h2>Publicar</h2>
+        <ol>
+          <li>
+            Inicia sesión con tu <strong>número de grupo</strong> y la
+            contraseña o el token que te dio tu profesor.
+          </li>
+          <li>
+            Abre el archivo del módulo y haz clic en <strong>Publicar</strong>.
+            La primera publicación de un nombre de archivo crea ese módulo; las
+            siguientes añaden versiones (v1, v2, ...).
+          </li>
+          <li>
+            El servidor ensambla primero tu archivo. El código con errores no se
+            publica.
+          </li>
+        </ol>
+        <ul>
+          <li>
+            Los profesores siempre usan tu
+            <strong>última versión publicada</strong>. Lo que tengas a medias
+            sigue siendo privado hasta que lo publiques.
+          </li>
+          <li>Los demás grupos nunca ven tu código. Los profesores sí.</li>
+          <li>
+            Un módulo no se puede renombrar. Publicar con otro nombre de archivo
+            crea un módulo nuevo.
+          </li>
+          <li>
+            <strong>Mis módulos</strong> muestra tus versiones. Puedes descargar
+            o restaurar cualquiera de ellas.
+          </li>
+        </ul>
+        <p>
+          Los profesores llaman <code>g7_trig</code> al módulo
+          <code>trig</code> del grupo 7, así que su <code>main</code> dice
+          <code>.EXTERNAL G7_TRIG-SIN</code>. Tú no escribes esa forma.
+        </p>
+      </section>
+
+      <section id="errores">
+        <h2>Errores frecuentes</h2>
+        <p>
+          El ensamblador muestra sus mensajes en inglés. Aquí aparecen tal cual,
+          con su solución.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mensaje</th>
+                <th>Solución</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="msg" lang="en">
+                  JSR TRIG-SIN: target … is 4511 words away, JSR reaches ±1024
+                </td>
+                <td>Llámala con <code>.FILL</code> + <code>JSRR</code>.</td>
+              </tr>
+              <tr>
+                <td class="msg" lang="en">
+                  TRIG-SIN is used without .EXTERNAL TRIG-SIN
+                </td>
+                <td>Añade la línea <code>.EXTERNAL</code>.</td>
+              </tr>
+              <tr>
+                <td class="msg" lang="en">
+                  No module named TRIG in this program
+                </td>
+                <td>Revisa el nombre del archivo o crea el archivo.</td>
+              </tr>
+              <tr>
+                <td class="msg" lang="en">trig.asm has no label SIN</td>
+                <td>
+                  Revisa cómo está escrita la etiqueta, incluidas las
+                  mayúsculas.
+                </td>
+              </tr>
+              <tr>
+                <td class="msg" lang="en">Labels can't contain '-'</td>
+                <td>
+                  Cambia el nombre de la etiqueta; el <code>-</code> solo se usa
+                  en <code>MODULO-ETIQUETA</code>.
+                </td>
+              </tr>
+              <tr>
+                <td class="msg" lang="en">
+                  Modules can't import from the entry file main.asm
+                </td>
+                <td>
+                  Mueve los datos o el código compartido a uno de tus módulos.
+                </td>
+              </tr>
+              <tr>
+                <td class="msg" lang="en">
+                  .ORIG is ignored in modules (info)
+                </td>
+                <td>
+                  No hay nada que corregir. Puedes borrar la línea
+                  <code>.ORIG</code>.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

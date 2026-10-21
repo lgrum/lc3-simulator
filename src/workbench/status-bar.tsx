@@ -1,4 +1,4 @@
-import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { BookOpenIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
@@ -90,6 +90,26 @@ function ThemeSwitch() {
   );
 }
 
+/**
+ * Opens the calculator module guide, a static page in public/guide, in the
+ * current language. A new tab, so the guide sits beside the editor.
+ */
+function GuideLink() {
+  return (
+    <a
+      href={`/guide/${getLocale()}.html`}
+      target="_blank"
+      rel="noopener"
+      aria-label={m.status_guide()}
+      className="flex items-center gap-1.5 rounded-[3px] px-1 text-silk-3 outline-none hover:text-silk focus-visible:ring-2 focus-visible:ring-phosphor/70"
+    >
+      <BookOpenIcon aria-hidden className="size-3.5" />
+      {/* Icon only on a phone, where the bar has no room for the words. */}
+      <span className="max-sm:hidden">{m.status_guide()}</span>
+    </a>
+  );
+}
+
 export function StatusBar() {
   const { privilege } = useSnapshot();
   return (
@@ -103,6 +123,7 @@ export function StatusBar() {
           : m.status_mode_supervisor()}
       </span>
       <span className="ml-auto flex flex-none items-center gap-4">
+        <GuideLink />
         <ThemeSwitch />
         <LanguageSwitch />
       </span>

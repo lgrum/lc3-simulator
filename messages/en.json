@@ -138,6 +138,7 @@
   "status_language": "Language",
   "editor_loading": "Loading the editor…",
   "status_theme": "Theme",
+  "status_guide": "Module guide",
   "theme_system": "System",
   "theme_light": "Light",
   "theme_dark": "Dark",
