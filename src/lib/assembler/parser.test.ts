@@ -184,6 +184,27 @@ describe("assembler parser", () => {
     });
   });
 
+  it("accepts operands separated by spaces alone", () => {
+    const withCommas = [
+      "ADD R0, R0, #0",
+      "AND R3, R4, R5",
+      "LD R0, TARGET",
+      "LDR R2, R3, #4",
+      "NOT R5, R6",
+      "STR R2, R3, #-1",
+    ];
+    const withSpaces = withCommas.map((line) => line.replaceAll(",", ""));
+    expect(parseSource(`${withSpaces.join("\n")}\n`)).toEqual(
+      parseSource(`${withCommas.join("\n")}\n`),
+    );
+    expect(parseSource("ADD R0 R0, #1\n")).toEqual(
+      parseSource("ADD R0, R0, #1\n"),
+    );
+    expect(() => parseSource("ADD R0 R0\n")).toThrow(
+      "Expected register or immediate",
+    );
+  });
+
   it("reserves trap names for trap routines", () => {
     expect(() => parseSource("HALT ADD R0, R0, #1\n")).toThrow(
       "All statements must end with a new line character",

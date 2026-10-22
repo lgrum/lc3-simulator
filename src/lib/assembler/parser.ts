@@ -86,13 +86,14 @@ class Parser {
     return this.peek().type === type;
   }
 
-  private expect(type: TokenType): Token {
-    const token = this.peek();
-    if (token.type !== type) {
-      throw this.error(`Expected ${type} but found ${token.type} instead`);
+  /**
+   * Operands are separated by a comma or by spaces alone (`ADD R0 R0 #1`),
+   * as other LC-3 assemblers allow.
+   */
+  private skipOperandSeparator(): void {
+    if (this.checkToken("comma")) {
+      this.advance();
     }
-    this.advance();
-    return token;
   }
 
   private skipNewlines(): void {
@@ -196,9 +197,9 @@ class Parser {
       case "ADD":
       case "AND": {
         const dr = this.parseRegister();
-        this.expect("comma");
+        this.skipOperandSeparator();
         const sr1 = this.parseRegister();
-        this.expect("comma");
+        this.skipOperandSeparator();
         return {
           type: opcode.toLowerCase() as "add" | "and",
           dr,
@@ -237,7 +238,7 @@ class Parser {
       case "ST":
       case "STI": {
         const dr = this.parseRegister();
-        this.expect("comma");
+        this.skipOperandSeparator();
         return {
           type: opcode.toLowerCase() as "ld" | "ldi" | "lea" | "st" | "sti",
           dr,
@@ -247,9 +248,9 @@ class Parser {
       case "LDR":
       case "STR": {
         const dr = this.parseRegister();
-        this.expect("comma");
+        this.skipOperandSeparator();
         const base_r = this.parseRegister();
-        this.expect("comma");
+        this.skipOperandSeparator();
         return {
           type: opcode === "LDR" ? "ldr" : "str",
           dr,
@@ -259,7 +260,7 @@ class Parser {
       }
       case "NOT": {
         const dr = this.parseRegister();
-        this.expect("comma");
+        this.skipOperandSeparator();
         return { type: "not", dr, sr: this.parseRegister() };
       }
       case "RET":
