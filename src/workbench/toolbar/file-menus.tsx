@@ -1,5 +1,5 @@
 import { ChevronDownIcon } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import {
   Menu,
@@ -23,8 +23,9 @@ import type { SavedProject } from "../lib/project-store";
 import { useAskDialog } from "../ui/ask-dialog";
 import type { Question } from "../ui/ask-dialog";
 import { Key } from "../ui/key";
-import { useWorkbench } from "../workbench-provider";
+import { useAssembly, useWorkbench } from "../workbench-provider";
 import type { Workbench } from "../workbench-provider";
+import { ExportDialog } from "./export-dialog";
 
 /** Whether replacing the project would lose work that only exists here. */
 function hasOwnWork({ project }: Workbench): boolean {
@@ -102,6 +103,8 @@ export function FileMenu() {
   const workbench = useWorkbench();
   const input = useRef<HTMLInputElement>(null);
   const { ask, dialog } = useAskDialog();
+  const { image } = useAssembly();
+  const [exportOpen, setExportOpen] = useState(false);
 
   return (
     <>
@@ -138,8 +141,12 @@ export function FileMenu() {
           >
             {m.file_save()}
           </MenuItem>
+          <MenuItem disabled={!image} onClick={() => setExportOpen(true)}>
+            {m.file_export()}
+          </MenuItem>
         </MenuPopup>
       </Menu>
+      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
       <input
         ref={input}
         type="file"
