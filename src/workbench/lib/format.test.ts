@@ -8,7 +8,6 @@ import {
   formatFixed,
   hex,
   mnemonicOf,
-  opcodeBits,
   parseFixed,
   parseWord,
   resolveAddress,
@@ -16,12 +15,11 @@ import {
 } from "./format";
 
 describe("format", () => {
-  it("formats words as LC-3 hex, signed values and opcode bits", () => {
+  it("formats words as LC-3 hex and signed values", () => {
     expect(hex(0x3000)).toBe("x3000");
     expect(hex(0x2a)).toBe("x002A");
     expect(signed(0xffff)).toBe(-1);
     expect(signed(0x7fff)).toBe(32767);
-    expect(opcodeBits(0xf025)).toBe("1111");
   });
 
   it("describes ASCII characters and control codes", () => {

@@ -91,7 +91,6 @@
   "column_breakpoint": "Breakpoint",
   "column_address": "Addr",
   "column_label": "Label",
-  "column_opcode": "Op",
   "column_decimal": "Dec",
   "column_instruction": "Instruction",
   "column_ascii": "Chr",

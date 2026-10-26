@@ -62,11 +62,6 @@ export function parseFixed(
   return raw & 0xffff;
 }
 
-/** Bits 15–12, the opcode field. */
-export function opcodeBits(value: number): string {
-  return ((value >>> 12) & 0xf).toString(2).padStart(4, "0");
-}
-
 const CONTROL_NAMES: Record<number, string> = {
   0: "NUL",
   9: "TAB",

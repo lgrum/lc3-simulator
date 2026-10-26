@@ -91,7 +91,6 @@
   "column_breakpoint": "Punto de interrupción",
   "column_address": "Dir.",
   "column_label": "Etiqueta",
-  "column_opcode": "Op",
   "column_decimal": "Dec",
   "column_instruction": "Instrucción",
   "column_ascii": "Car.",

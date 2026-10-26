@@ -7,7 +7,7 @@ export function Screen({ className, ...props }: ComponentProps<"section">) {
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden rounded-[7px] border border-screen-border bg-screen shadow-[inset_0_2px_8px_var(--screen-inset),0_0_0_3px_var(--bezel)]",
+        "flex min-h-0 flex-col overflow-hidden bg-screen shadow-[inset_0_2px_8px_var(--screen-inset)]",
         className,
       )}
       {...props}
@@ -19,10 +19,7 @@ export function Screen({ className, ...props }: ComponentProps<"section">) {
 export function Panel({ className, ...props }: ComponentProps<"section">) {
   return (
     <section
-      className={cn(
-        "flex min-h-0 min-w-0 flex-col rounded-[7px] border border-edge bg-case-2",
-        className,
-      )}
+      className={cn("flex min-h-0 min-w-0 flex-col bg-case-2", className)}
       {...props}
     />
   );
@@ -31,14 +28,21 @@ export function Panel({ className, ...props }: ComponentProps<"section">) {
 export function PanelHeader({
   title,
   titleId,
+  className,
   children,
 }: {
   title: ReactNode;
   titleId?: string;
+  className?: string;
   children?: ReactNode;
 }) {
   return (
-    <header className="flex h-9 flex-none items-center justify-between gap-3 border-b border-edge px-3">
+    <header
+      className={cn(
+        "flex h-9 flex-none items-center justify-between gap-3 border-b border-edge px-3",
+        className,
+      )}
+    >
       <h2 id={titleId} className="text-[13.5px] font-semibold text-silk-hi">
         {title}
       </h2>

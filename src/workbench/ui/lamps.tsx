@@ -10,7 +10,7 @@ export function Lamps({ value }: { value: number }) {
       {GROUPS.map((group) => (
         <span
           key={group}
-          className="flex gap-[3px] px-1 not-first:border-l not-first:border-edge-2"
+          className="flex gap-[2px] px-[3px] not-first:border-l not-first:border-edge-2"
         >
           {BITS.map((bit) => {
             const on = (value >>> ((3 - group) * 4 + bit)) & 1;

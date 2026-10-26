@@ -28,17 +28,20 @@ export function Workbench() {
         <FilesProvider>
           <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[48px_minmax(0,1fr)_26px] bg-linear-to-b from-case-top to-case-bottom text-[13px] text-silk">
             <Toolbar />
-            {/* Side by side on desktops; stacked and scrolling on tablets. */}
-            <main className="relative grid min-h-0 grid-cols-[minmax(0,1fr)_540px] gap-2.5 p-2.5 max-[1100px]:grid-cols-[minmax(0,1fr)] max-[1100px]:grid-rows-[max-content_max-content] max-[1100px]:overflow-y-auto">
-              <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] gap-2.5 max-[1100px]:grid-rows-[60dvh_260px]">
+            {/*
+             * Side by side on desktops; stacked and scrolling on tablets.
+             * Panels sit flush, edge to edge, with one-pixel dividers.
+             */}
+            <main className="relative grid min-h-0 grid-cols-[minmax(0,1fr)_500px] divide-x divide-edge max-[1100px]:grid-cols-[minmax(0,1fr)] max-[1100px]:grid-rows-[max-content_max-content] max-[1100px]:divide-x-0 max-[1100px]:divide-y max-[1100px]:overflow-y-auto">
+              <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] divide-y divide-seam max-[1100px]:grid-rows-[60dvh_260px]">
                 {/* On phones the file sidebar opens as a sheet instead. */}
-                <div className="grid min-h-0 grid-cols-[210px_minmax(0,1fr)] gap-2.5 max-[800px]:grid-cols-[minmax(0,1fr)]">
+                <div className="grid min-h-0 grid-cols-[240px_minmax(0,1fr)] divide-x divide-edge max-[800px]:grid-cols-[minmax(0,1fr)]">
                   <FileSidebar />
                   <EditorPanel />
                 </div>
                 <BottomPanel />
               </div>
-              <div className="grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-2.5 max-[1100px]:grid-rows-[max-content_420px]">
+              <div className="grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] divide-y divide-edge max-[1100px]:grid-rows-[max-content_420px]">
                 <RegistersPanel />
                 <MemoryPanel />
               </div>

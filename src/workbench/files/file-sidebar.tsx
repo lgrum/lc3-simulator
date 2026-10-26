@@ -950,11 +950,7 @@ export function FileSidebar() {
       </Sheet>
     );
   return (
-    <Sidebar
-      collapsible="none"
-      aria-label={m.files_title()}
-      className="w-full rounded-[7px] border border-edge"
-    >
+    <Sidebar collapsible="none" aria-label={m.files_title()} className="w-full">
       <FilesContent />
     </Sidebar>
   );

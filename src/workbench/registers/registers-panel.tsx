@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { RegisterName } from "@/lib/simulator/controller";
@@ -5,6 +6,7 @@ import { LC3 } from "@/lib/simulator/isa/lc3";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 
 import {
   asciiOf,
@@ -107,16 +109,54 @@ function RegisterRow({ name, value, fractionBits, note }: RowProps) {
       {fractionBits !== undefined ? (
         <>
           <NumberCells value={value} fractionBits={fractionBits} />
-          <td className="w-full max-w-0 truncate font-mono text-xs text-silk-2">
-            {note}
-          </td>
+          <NoteCell note={note} className="font-mono" />
         </>
       ) : (
-        <td colSpan={3} className="w-full max-w-0 truncate text-xs text-silk-2">
-          {note}
-        </td>
+        <NoteCell note={note} colSpan={3} />
       )}
     </tr>
+  );
+}
+
+/** A note cut short by the column shows in full on hover. */
+function NoteCell({
+  note,
+  colSpan,
+  className,
+}: {
+  note: ReactNode;
+  colSpan?: number;
+  className?: string;
+}) {
+  const cell = useRef<HTMLTableCellElement>(null);
+  const [open, setOpen] = useState(false);
+  return (
+    <Tooltip
+      open={open}
+      onOpenChange={(next) =>
+        setOpen(
+          next &&
+            cell.current !== null &&
+            cell.current.scrollWidth > cell.current.clientWidth,
+        )
+      }
+    >
+      <TooltipTrigger
+        render={
+          <td
+            ref={cell}
+            colSpan={colSpan}
+            className={cn(
+              "w-full max-w-0 truncate text-xs text-silk-2",
+              className,
+            )}
+          />
+        }
+      >
+        {note}
+      </TooltipTrigger>
+      <TooltipPopup>{note}</TooltipPopup>
+    </Tooltip>
   );
 }
 

@@ -33,8 +33,6 @@
   --screen-border: #b9b4a8;
   --screen-inset: rgba(60, 50, 30, 0.12);
   --well-inset: rgba(60, 50, 30, 0.2);
-  --bezel: #d9d5cb;
-  --bezel-focus: #ecc98a;
   --field: #ffffff;
   --phosphor: #b35c00;
   --phosphor-glow: transparent;
@@ -144,8 +142,6 @@
   --screen-border: #000000;
   --screen-inset: rgba(0, 0, 0, 0.7);
   --well-inset: rgba(0, 0, 0, 0.7);
-  --bezel: #1f2123;
-  --bezel-focus: #3a3324;
   --field: #16180f;
   --phosphor: #ffb547;
   --phosphor-glow: rgba(255, 181, 71, 0.5);

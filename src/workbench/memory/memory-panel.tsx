@@ -8,21 +8,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { tracksPc } from "../actions";
 import { toggleBreakpoint } from "../lib/breakpoints";
-import {
-  asciiOf,
-  hex,
-  opcodeBits,
-  resolveAddress,
-  signed,
-} from "../lib/format";
+import { asciiOf, hex, resolveAddress, signed } from "../lib/format";
 import { EditableWord } from "../ui/editable-word";
-import { Panel, PanelHeader } from "../ui/surfaces";
+import { PanelHeader, Screen } from "../ui/surfaces";
 import { useChanges, useSnapshot, useWorkbench } from "../workbench-provider";
 
 const ROW_HEIGHT = 22;
 const WORDS = 0x10000;
 const COLUMNS =
-  "grid grid-cols-[20px_48px_minmax(0,0.9fr)_62px_34px_46px_minmax(0,2fr)_28px] items-center gap-x-2 pr-2";
+  "grid grid-cols-[20px_48px_minmax(0,0.9fr)_62px_46px_minmax(0,2fr)_28px] items-center gap-x-2 pr-2";
 
 function GoTo({ onGo }: { onGo: (addr: number) => void }) {
   const { machine } = useWorkbench();
@@ -52,7 +46,7 @@ function GoTo({ onGo }: { onGo: (addr: number) => void }) {
           setNotFound(false);
         }}
         translate="no"
-        className="h-6 w-48 rounded-[4px] bg-screen px-2 font-mono text-[11.5px] text-silk shadow-[inset_0_1px_3px_var(--well-inset)] outline-none placeholder:text-silk-3 focus-visible:ring-2 focus-visible:ring-phosphor/70 aria-invalid:ring-2 aria-invalid:ring-lamp"
+        className="h-6 w-48 rounded-[4px] border border-edge-2 bg-field px-2 font-mono text-[11.5px] text-silk outline-none placeholder:text-silk-3 focus-visible:ring-2 focus-visible:ring-phosphor/70 aria-invalid:ring-2 aria-invalid:ring-lamp"
       />
       <span role="status" className="sr-only">
         {notFound ? m.memory_go_to_not_found() : ""}
@@ -173,9 +167,6 @@ function MemoryRow({
         />
         {changed && <span className="sr-only">{m.changed()}</span>}
       </span>
-      <span role="cell" className="text-code-dim">
-        {opcodeBits(word)}
-      </span>
       <span role="cell" className="text-right tabular-nums">
         {signed(word)}
       </span>
@@ -267,7 +258,6 @@ function MemoryTable({
         <span role="columnheader" className="pl-1.5">
           {m.column_hex()}
         </span>
-        <span role="columnheader">{m.column_opcode()}</span>
         <span role="columnheader" className="text-right">
           {m.column_decimal()}
         </span>
@@ -308,8 +298,14 @@ export function MemoryPanel() {
   const [follow, setFollow] = useState(true);
   const [goTo, setGoTo] = useState<GoToRequest>();
   return (
-    <Panel aria-labelledby="memory-title" className="min-h-0">
-      <PanelHeader title={m.memory()} titleId="memory-title">
+    // A screen, like the editor and console: a readout, not a panel of
+    // controls like the registers above it.
+    <Screen aria-labelledby="memory-title">
+      <PanelHeader
+        title={m.memory()}
+        titleId="memory-title"
+        className="border-screen-line"
+      >
         <div className="flex items-center gap-2">
           <GoTo
             onGo={(addr) =>
@@ -319,9 +315,9 @@ export function MemoryPanel() {
           <FollowPc on={follow} onChange={setFollow} />
         </div>
       </PanelHeader>
-      <div className="m-2 mt-0 flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-[5px] bg-screen">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <MemoryTable follow={follow} goTo={goTo} />
       </div>
-    </Panel>
+    </Screen>
   );
 }

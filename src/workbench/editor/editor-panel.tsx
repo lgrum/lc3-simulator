@@ -85,7 +85,7 @@ export function EditorPanel() {
       : (pcTab ?? picked?.file ?? fileTabs.at(0) ?? os.file);
 
   return (
-    <Screen className="focus-within:shadow-[inset_0_2px_8px_var(--screen-inset),0_0_0_3px_var(--bezel-focus)]">
+    <Screen>
       <ScreenTabs
         value={tab}
         onValueChange={(value: string) => tabs.show(value)}
