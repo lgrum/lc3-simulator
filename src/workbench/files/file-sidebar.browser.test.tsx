@@ -1,3 +1,4 @@
+import { strToU8, zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 
@@ -93,5 +94,78 @@ describe("File sidebar", () => {
     await expect
       .element(page.getByRole("tab", { name: "main.asm" }))
       .not.toBeInTheDocument();
+  });
+});
+
+/** Picks `file` in the sidebar's hidden "Open a project from .zip" input. */
+function pickZip(file: File) {
+  const input = document.querySelector<HTMLInputElement>(
+    'input[type=file][accept^=".zip"]',
+  );
+  if (!input) throw new Error("No .zip input");
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  input.files = transfer.files;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+describe("Opening a project from .zip", () => {
+  const zip = (entries: Record<string, string>) =>
+    new File(
+      [
+        zipSync(
+          Object.fromEntries(
+            Object.entries(entries).map(([path, text]) => [
+              path,
+              strToU8(text),
+            ]),
+          ),
+        ),
+      ],
+      "calc.zip",
+    );
+
+  it("replaces the project after asking, and lists files left out", async () => {
+    renderWorkbench({
+      files: {
+        "mine.asm": "        .ORIG x3000\n        HALT\n        .END\n",
+      },
+      folders: [],
+      entry: "mine.asm",
+    });
+    await expect.element(item("mine.asm")).toBeVisible();
+
+    pickZip(
+      zip({
+        "main.asm": "        .ORIG x3000\n        HALT\n        .END\n",
+        "lib/trig.asm": "SIN     RET\n",
+        "notes.txt": "notes",
+      }),
+    );
+    const dialog = page.getByRole("alertdialog");
+    await expect
+      .element(dialog)
+      .toHaveTextContent("Replace all the files in the project?");
+    await userEvent.click(dialog.getByRole("button", { name: "Replace" }));
+
+    await expect
+      .element(dialog)
+      .toHaveTextContent(
+        "Only .asm files with valid module names are opened. Left out: notes.txt.",
+      );
+    await userEvent.click(dialog.getByRole("button", { name: "OK" }));
+    await expect.element(item("mine.asm")).not.toBeInTheDocument();
+    await expect.poll(() => rowText("main.asm")).toContain("entry");
+    await expect
+      .element(page.getByRole("tab", { name: "main.asm" }))
+      .toHaveAttribute("aria-selected", "true");
+  });
+
+  it("says when a file isn't a project .zip", async () => {
+    renderWorkbench();
+    pickZip(new File(["not a zip"], "notes.zip"));
+    await expect
+      .element(page.getByRole("alertdialog"))
+      .toHaveTextContent("notes.zip isn't a .zip file, or it is damaged.");
   });
 });

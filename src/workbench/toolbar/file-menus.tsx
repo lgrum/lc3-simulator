@@ -10,9 +10,14 @@ import {
 } from "@/components/ui/menu";
 import { m } from "@/paraglide/messages";
 
-import { openProject, writeFile } from "../actions";
-import { EXAMPLES, isExampleText } from "../examples";
-import { NEW_FILE_TEXT, downloadFile, nameProblemText } from "../files/shared";
+import { writeFile } from "../actions";
+import { EXAMPLES } from "../examples";
+import {
+  NEW_FILE_TEXT,
+  downloadFile,
+  nameProblemText,
+  replaceProject,
+} from "../files/shared";
 import {
   baseName,
   fileNameProblem,
@@ -27,29 +32,11 @@ import { useAssembly, useWorkbench } from "../workbench-provider";
 import type { Workbench } from "../workbench-provider";
 import { ExportDialog } from "./export-dialog";
 
-/** Whether replacing the project would lose work that only exists here. */
-function hasOwnWork({ project }: Workbench): boolean {
-  return [...project.getProject().files.values()].some(
-    (text) =>
-      text.trim() !== "" && text !== NEW_FILE_TEXT && !isExampleText(text),
-  );
-}
-
 function useOpenProject() {
   const workbench = useWorkbench();
   const { ask, dialog } = useAskDialog();
-  const open = async (project: SavedProject) => {
-    if (
-      hasOwnWork(workbench) &&
-      !(await ask({
-        title: m.project_replace_confirm(),
-        confirm: m.dialog_replace(),
-        destructive: true,
-      }))
-    )
-      return;
-    openProject(workbench, project);
-  };
+  const open = (project: SavedProject) =>
+    replaceProject(workbench, project, ask);
   return { open, dialog };
 }
 

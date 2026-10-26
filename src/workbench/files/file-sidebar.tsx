@@ -16,6 +16,7 @@ import {
   LockIcon,
   MoreHorizontalIcon,
   PackageIcon,
+  PackageOpenIcon,
   UploadIcon,
 } from "lucide-react";
 import {
@@ -73,10 +74,15 @@ import {
   joinPath,
   toFileName,
 } from "../lib/file-names";
-import { zipProject } from "../lib/project-zip";
+import { unzipProject, zipProject } from "../lib/project-zip";
 import { useAskDialog } from "../ui/ask-dialog";
 import { useEditorTabs, useProject, useWorkbench } from "../workbench-provider";
-import { NEW_FILE_TEXT, downloadFile, nameProblemText } from "./shared";
+import {
+  NEW_FILE_TEXT,
+  downloadFile,
+  nameProblemText,
+  replaceProject,
+} from "./shared";
 
 const ZIP_NAME = "lc3-project.zip";
 
@@ -321,6 +327,7 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
   const { ask, dialog } = useAskDialog();
   const upload = useRef<HTMLInputElement>(null);
   const uploadFolder = useRef("");
+  const zipUpload = useRef<HTMLInputElement>(null);
   const hintId = useId();
 
   const open = (path: string) => {
@@ -490,6 +497,27 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
       }
       writeFile(workbench, path, await file.text());
     }
+  };
+
+  /** Replaces the project with the one in a .zip, as Download made it. */
+  const openZip = async (file: File) => {
+    const result = unzipProject(new Uint8Array(await file.arrayBuffer()));
+    if (!result.ok) {
+      await ask({
+        title: m.zip_failed_title(),
+        description:
+          result.reason === "unreadable"
+            ? m.zip_unreadable({ file: file.name })
+            : m.zip_no_files({ file: file.name }),
+      });
+      return;
+    }
+    if (!(await replaceProject(workbench, result.project, ask))) return;
+    if (result.skipped.length > 0)
+      await ask({
+        title: m.zip_skipped_title(),
+        description: m.zip_skipped({ files: result.skipped.join(", ") }),
+      });
   };
 
   const confirmDeleteFile = async (path: string) => {
@@ -713,6 +741,11 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
           () => startUpload(""),
         )}
         {headerButton(
+          m.file_open_zip(),
+          <PackageOpenIcon aria-hidden className="size-3.5" />,
+          () => zipUpload.current?.click(),
+        )}
+        {headerButton(
           m.file_download_zip(),
           <PackageIcon aria-hidden className="size-3.5" />,
           () => {
@@ -740,6 +773,19 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
             const input = event.currentTarget;
             if (input.files) await addUploads(input.files);
             input.value = "";
+          }}
+        />
+        <input
+          ref={zipUpload}
+          type="file"
+          accept=".zip,application/zip"
+          className="hidden"
+          aria-hidden
+          tabIndex={-1}
+          onChange={async (event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            if (file) await openZip(file);
           }}
         />
       </SidebarHeader>
