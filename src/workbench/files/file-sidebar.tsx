@@ -856,7 +856,7 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
                             className={
                               isFolder
                                 ? "cursor-default pr-8 text-xs text-silk-2"
-                                : "cursor-default pr-16 font-mono text-[12.5px]"
+                                : "cursor-default font-mono text-[12.5px]"
                             }
                           />
                         }
@@ -868,7 +868,27 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
                         ) : (
                           <FolderIcon aria-hidden className="size-3.5" />
                         )}
-                        <span>{baseName(path)}</span>
+                        <span className="truncate">{baseName(path)}</span>
+                        {/*
+                         * The badges float over the row's end. An invisible
+                         * copy keeps their width free, in any language, so a
+                         * long name is cut short before them.
+                         */}
+                        {(remote.has(path) || path === entry) && (
+                          <span
+                            aria-hidden
+                            className="invisible ms-auto flex flex-none items-center gap-1 font-sans text-[10.5px] font-medium"
+                          >
+                            {remote.has(path) && (
+                              <LockIcon className="size-4" />
+                            )}
+                            {path === entry && (
+                              <span className="px-1.5">
+                                {m.file_entry_badge()}
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </ContextMenuTrigger>
                       <ContextMenuPopup align="start">
                         <ContextActions actions={actions} />
