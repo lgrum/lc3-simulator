@@ -61,7 +61,7 @@ function AssemblyError() {
 export function EditorPanel() {
   const { os, tabs } = useWorkbench();
   const { files, remote } = useProject();
-  const { open, chosen } = useEditorTabs();
+  const { open, chosen, previews } = useEditorTabs();
   const { pc } = useSnapshot();
   const pcFile = usePcFile();
   const pcInProject = pcFile !== undefined && files.has(pcFile);
@@ -93,26 +93,41 @@ export function EditorPanel() {
       >
         <ScreenTabList>
           <FilesTrigger />
-          {fileTabs.map((file) => (
-            <span key={file} className="flex flex-none items-center">
-              <ScreenTab value={file} title={file}>
-                {baseName(file)}
-                {remote.has(file) && (
-                  <span className="font-mono text-[10.5px] text-silk-2">
-                    {m.editor_read_only()}
-                  </span>
-                )}
-              </ScreenTab>
-              <button
-                type="button"
-                aria-label={m.tab_close({ file })}
-                onClick={() => tabs.close(file)}
-                className="-mb-px grid size-5 place-items-center rounded-[3px] text-silk-3 outline-none hover:bg-tint/6 hover:text-silk focus-visible:ring-2 focus-visible:ring-phosphor/70"
-              >
-                <XIcon aria-hidden className="size-3" />
-              </button>
-            </span>
-          ))}
+          {fileTabs.map((file) => {
+            const preview = previews.get(file);
+            const name = preview ? preview.name : baseName(file);
+            return (
+              <span key={file} className="flex flex-none items-center">
+                <ScreenTab
+                  value={file}
+                  title={
+                    preview
+                      ? m.editor_preview_hint({
+                          file: preview.name,
+                          version: preview.version,
+                        })
+                      : file
+                  }
+                >
+                  {name}
+                  {(preview || remote.has(file)) && (
+                    <span className="font-mono text-[10.5px] text-silk-2">
+                      {preview ? `v${preview.version} · ` : ""}
+                      {m.editor_read_only()}
+                    </span>
+                  )}
+                </ScreenTab>
+                <button
+                  type="button"
+                  aria-label={m.tab_close({ file: name })}
+                  onClick={() => tabs.close(file)}
+                  className="-mb-px grid size-5 place-items-center rounded-[3px] text-silk-3 outline-none hover:bg-tint/6 hover:text-silk focus-visible:ring-2 focus-visible:ring-phosphor/70"
+                >
+                  <XIcon aria-hidden className="size-3" />
+                </button>
+              </span>
+            );
+          })}
           <ScreenTab value={os.file} className="flex-none">
             {os.file}
             <span className="font-mono text-[10.5px] text-silk-2">
@@ -125,11 +140,18 @@ export function EditorPanel() {
             <p className="p-4 text-xs text-silk-2">{m.editor_loading()}</p>
           }
         >
-          {fileTabs.map((file) => (
-            <ScreenTabPanel key={file} value={file} keepMounted>
-              <CodeView file={file} label={m.editor_file_label({ file })} />
-            </ScreenTabPanel>
-          ))}
+          {fileTabs.map((file) => {
+            const preview = previews.get(file);
+            return (
+              <ScreenTabPanel key={file} value={file} keepMounted>
+                <CodeView
+                  file={file}
+                  label={m.editor_file_label({ file: preview?.name ?? file })}
+                  preview={preview?.source}
+                />
+              </ScreenTabPanel>
+            );
+          })}
           <ScreenTabPanel value={os.file} keepMounted>
             <CodeView file={os.file} label={m.editor_os_label()} />
           </ScreenTabPanel>

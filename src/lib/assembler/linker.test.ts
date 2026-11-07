@@ -697,16 +697,27 @@ SAVE    .BLKW #1
     );
   });
 
-  it("reads g<n>_ names as group modules only in admin builds", () => {
+  const CALLS_G7 =
+    ".EXTERNAL G7_TRIG-SIN\nLD R5, P\nJSRR R5\nHALT\nP .FILL G7_TRIG-SIN\n";
+
+  it("reads a group's g<n>_ names as other groups' modules", () => {
     const result = link(
       [
-        nsModule(
-          "main.asm",
-          ".EXTERNAL G7_TRIG-SIN\nLD R5, P\nJSRR R5\nHALT\nP .FILL G7_TRIG-SIN\n",
-          "group:3",
-          "main",
-          true,
-        ),
+        nsModule("main.asm", CALLS_G7, "group:3", "main", true),
+        nsModule("lib/g7_trig.asm", TRIG3, "group:7", "trig"),
+      ],
+      { entry: "main.asm" },
+    );
+    if (!result.ok) throw new Error(result.diagnostics[0].text);
+    expect(result.image.map.map((entry) => entry.file)).toContain(
+      "lib/g7_trig.asm",
+    );
+  });
+
+  it("has no group modules in a local build", () => {
+    const result = link(
+      [
+        nsModule("main.asm", CALLS_G7, "local", "main", true),
         nsModule("lib/g7_trig.asm", TRIG3, "group:7", "trig"),
       ],
       { entry: "main.asm" },

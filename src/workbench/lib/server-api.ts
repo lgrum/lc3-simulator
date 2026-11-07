@@ -5,6 +5,7 @@ import {
   fetchBuildModulesFn,
   getVersionSourceFn,
   listMyModulesFn,
+  listPublishedGroupsFn,
   listVersionsFn,
   publishModuleFn,
 } from "@/server/modules.functions";
@@ -21,6 +22,7 @@ export const accountBackend: AccountBackend = {
 
 export const modulesBackend: ModulesBackend = {
   listMine: () => listMyModulesFn(),
+  listGroups: () => listPublishedGroupsFn(),
   listVersions: (moduleId) => listVersionsFn({ data: { moduleId } }),
   getSource: (versionId) => getVersionSourceFn({ data: { versionId } }),
   publish: (name, source) => publishModuleFn({ data: { name, source } }),

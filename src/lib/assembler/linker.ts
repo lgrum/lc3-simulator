@@ -106,20 +106,23 @@ export function displayName(
   return isEntry ? label : `${moduleName(module.file).toUpperCase()}-${label}`;
 }
 
-/** How admins name group modules: `g7_trig` is group 7's `trig`. */
+/** How accounts name group modules: `g7_trig` is group 7's `trig`. */
 const GROUP_MODULE = /^g(\d+)_(.+)$/i;
 
 /**
  * The module an import names, as namespace and name. Imports resolve in the
- * importer's namespace, except that an admin's `g<n>_<name>` means group
- * n's module `name`. Group modules' own imports stay in the group's
- * namespace, so group 7's `HELPERS-X` finds group 7's `helpers`.
+ * importer's namespace, except that in a signed-in build (an admin's or a
+ * group's) `g<n>_<name>` means group n's module `name`. So group 7's
+ * `HELPERS-X` finds group 7's `helpers`, and its `G3_TRIG-SIN` group 3's
+ * `trig`. A local build (namespace `local`) has no groups.
  */
 export function resolveImport(
   namespace: string,
   name: string,
 ): { namespace: string; name: string } {
-  const group = namespace.startsWith("admin:") && GROUP_MODULE.exec(name);
+  const signedIn =
+    namespace.startsWith("admin:") || namespace.startsWith("group:");
+  const group = signedIn && GROUP_MODULE.exec(name);
   return group
     ? { namespace: `group:${Number(group[1])}`, name: group[2] }
     : { namespace, name };

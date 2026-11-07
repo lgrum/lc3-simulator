@@ -7,6 +7,7 @@ import {
   fetchBuildModules,
   getVersionSource,
   listModulesOf,
+  listPublishedGroups,
   listVersions,
   publishModule,
 } from "./modules.server";
@@ -23,13 +24,21 @@ export const listMyModulesFn = createServerFn({ method: "GET" }).handler(
   },
 );
 
-/** The latest source of each module an admin's build needs. */
+/** The latest source of each module a signed-in build needs. */
 export const fetchBuildModulesFn = createServerFn({ method: "POST" })
   .validator(fetchBuildInput)
   .handler(async ({ data }) => {
-    const viewer = await requireViewer("admin");
+    const viewer = await requireViewer();
     return fetchBuildModules(viewer, data.names);
   });
+
+/** Other groups' published modules, for the file sidebar. */
+export const listPublishedGroupsFn = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const viewer = await requireViewer();
+    return listPublishedGroups(viewer);
+  },
+);
 
 /** A group's modules, for admins. Other admins' modules never show. */
 export const listGroupModulesFn = createServerFn({ method: "GET" })
@@ -40,7 +49,7 @@ export const listGroupModulesFn = createServerFn({ method: "GET" })
     return listModulesOf(group.userId);
   });
 
-/** A module's versions: the owner's, or a group's for admins. */
+/** A module's versions: the viewer's own, or any group's. */
 export const listVersionsFn = createServerFn({ method: "GET" })
   .validator(z.object({ moduleId: z.number().int() }))
   .handler(async ({ data }) => {
@@ -48,7 +57,7 @@ export const listVersionsFn = createServerFn({ method: "GET" })
     return listVersions(viewer, data.moduleId);
   });
 
-/** One version's source: the owner's, or a group's for admins. */
+/** One version's source: the viewer's own, or any group's. */
 export const getVersionSourceFn = createServerFn({ method: "GET" })
   .validator(z.object({ versionId: z.number().int() }))
   .handler(async ({ data }) => {

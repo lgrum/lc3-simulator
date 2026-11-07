@@ -2,9 +2,29 @@ import type { EditorState } from "@codemirror/state";
 
 import type { ProjectStore } from "./project-store";
 
+/**
+ * A published module shown read-only, outside the project: it isn't saved
+ * or built. Its tab id starts with PREVIEW_PREFIX, which no path can.
+ */
+export type Preview = {
+  /** The file name the tab shows, e.g. `g7_trig.asm`. */
+  name: string;
+  version: number;
+  source: string;
+};
+
+export const PREVIEW_PREFIX = "preview:";
+
+/** The tab id of the preview of the file `name`. */
+export function previewId(name: string): string {
+  return PREVIEW_PREFIX + name.toLowerCase();
+}
+
 export type EditorTabsState = {
-  /** Project files with an open tab, in tab order. */
+  /** Project files and previews with an open tab, in tab order. */
   open: ReadonlyArray<string>;
+  /** The open previews, by tab id. */
+  previews: ReadonlyMap<string, Preview>;
   /**
    * The tab the user picked and the PC at that moment. The editor shows it
    * until the PC moves, then follows the PC.
@@ -30,7 +50,11 @@ export class EditorTabs {
     private readonly project: ProjectStore,
     private readonly currentPc: () => number,
   ) {
-    this.state = { open: [project.getProject().entry], chosen: null };
+    this.state = {
+      open: [project.getProject().entry],
+      previews: new Map(),
+      chosen: null,
+    };
     project.subscribe(() => this.prune());
   }
 
@@ -55,7 +79,28 @@ export class EditorTabs {
       this.state.open.includes(file) || this.project.getText(file) === undefined
         ? this.state.open
         : [...this.state.open, file];
-    this.publish({ open, chosen: { file, pc: this.currentPc() } });
+    this.publish({
+      ...this.state,
+      open,
+      chosen: { file, pc: this.currentPc() },
+    });
+  }
+
+  /**
+   * Opens a read-only preview of a published module, or updates its source,
+   * and switches to it. One tab per module name.
+   */
+  preview(preview: Preview): void {
+    const id = previewId(preview.name);
+    const previews = new Map(this.state.previews).set(id, preview);
+    const open = this.state.open.includes(id)
+      ? this.state.open
+      : [...this.state.open, id];
+    this.publish({
+      open,
+      previews,
+      chosen: { file: id, pc: this.currentPc() },
+    });
   }
 
   /** Shows `file` with the cursor on `line`, e.g. for a problem. */
@@ -75,7 +120,13 @@ export class EditorTabs {
   close(file: string): void {
     if (!this.state.open.includes(file)) return;
     const chosen = this.state.chosen?.file === file ? null : this.state.chosen;
-    this.publish({ open: this.state.open.filter((f) => f !== file), chosen });
+    const previews = new Map(this.state.previews);
+    previews.delete(file);
+    this.publish({
+      open: this.state.open.filter((f) => f !== file),
+      previews,
+      chosen,
+    });
   }
 
   /** Keeps a closed editor's state for when its tab opens again. */
@@ -109,7 +160,9 @@ export class EditorTabs {
     const renamed = (file: string) => renames.get(file) ?? file;
     for (const file of this.saved.keys())
       if (!files.has(file)) this.saved.delete(file);
-    const open = this.state.open.map(renamed).filter((file) => files.has(file));
+    const open = this.state.open
+      .map(renamed)
+      .filter((file) => files.has(file) || this.state.previews.has(file));
     const chosen = this.state.chosen && {
       ...this.state.chosen,
       file: renamed(this.state.chosen.file),
@@ -122,6 +175,7 @@ export class EditorTabs {
     if (open.length === 0) open.push(entry);
     this.publish({
       open,
+      previews: this.state.previews,
       chosen: chosen && open.includes(chosen.file) ? chosen : null,
     });
   }

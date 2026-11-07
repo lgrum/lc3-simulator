@@ -49,20 +49,13 @@ describe("group module names", () => {
     expect(parseGroupModuleName("trig")).toBeNull();
   });
 
-  it("mean group modules only for admins", () => {
-    expect(importTarget(prof, "G7_TRIG")).toEqual({
+  it("mean group modules in imports", () => {
+    expect(importTarget("G7_TRIG")).toEqual({
       kind: "group",
       group: 7,
       name: "TRIG",
     });
-    expect(importTarget(prof, "helpers")).toEqual({
-      kind: "own",
-      name: "helpers",
-    });
-    expect(importTarget(group7, "g3_trig")).toEqual({
-      kind: "own",
-      name: "g3_trig",
-    });
+    expect(importTarget("helpers")).toEqual({ kind: "own", name: "helpers" });
   });
 });
 
@@ -72,16 +65,13 @@ describe("canRead", () => {
     expect(canRead(prof, { userId: "a1", kind: "admin" })).toBe(true);
   });
 
-  it("lets admins read group modules", () => {
+  it("lets everyone read group modules", () => {
     expect(canRead(prof, { userId: "g7", kind: "group" })).toBe(true);
+    expect(canRead(group7, { userId: "g8", kind: "group" })).toBe(true);
   });
 
-  it("never lets admins read other admins' modules", () => {
+  it("never lets anyone read another admin's modules", () => {
     expect(canRead(other, { userId: "a1", kind: "admin" })).toBe(false);
-  });
-
-  it("never lets groups read other accounts' modules", () => {
-    expect(canRead(group7, { userId: "g8", kind: "group" })).toBe(false);
     expect(canRead(group7, { userId: "a1", kind: "admin" })).toBe(false);
   });
 });
@@ -90,24 +80,23 @@ describe("checkStored", () => {
   const RET = "RET\n";
 
   it("accepts a valid name and size", () => {
-    expect(checkStored(group7, "trig", RET)).toBeNull();
+    expect(checkStored("trig", RET)).toBeNull();
   });
 
   it("refuses invalid names", () => {
-    expect(checkStored(group7, "my-trig", RET)).toEqual({ kind: "name" });
+    expect(checkStored("my-trig", RET)).toEqual({ kind: "name" });
   });
 
-  it("refuses the reserved g<n>_ names for admins only", () => {
-    expect(checkStored(prof, "g7_trig", RET)).toEqual({ kind: "reserved" });
-    expect(checkStored(group7, "g7_trig", RET)).toBeNull();
+  it("refuses the g<n>_ names, which mean other groups' modules", () => {
+    expect(checkStored("g7_trig", RET)).toEqual({ kind: "reserved" });
   });
 
   it("refuses sources over 64 KB", () => {
     const big = `; ${"x".repeat(MAX_SOURCE_BYTES)}\n${RET}`;
-    expect(checkStored(group7, "big", big)).toEqual({ kind: "too-large" });
+    expect(checkStored("big", big)).toEqual({ kind: "too-large" });
   });
 
   it("doesn't assemble: that happens in the browser", () => {
-    expect(checkStored(group7, "bad", "ADD R1, R2\n")).toBeNull();
+    expect(checkStored("bad", "ADD R1, R2\n")).toBeNull();
   });
 });

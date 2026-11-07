@@ -9,6 +9,7 @@ import type {
   FetchedModule,
   ModuleSummary,
   Owner,
+  PublishedGroup,
   PublishResult,
   VersionSource,
   VersionSummary,
@@ -57,6 +58,48 @@ export async function listModulesOf(
     latest: row.latest ?? 0,
     updatedAt: row.updatedAt?.getTime() ?? 0,
   }));
+}
+
+/**
+ * Every group's published modules but the viewer's own, by group number,
+ * for the file sidebar. Groups with nothing published are left out.
+ */
+export async function listPublishedGroups(
+  viewer: Viewer,
+): Promise<Array<PublishedGroup>> {
+  const rows = await db
+    .select({
+      userId: user.id,
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      moduleId: modules.id,
+      module: modules.name,
+      latest: max(versions.number),
+      updatedAt: max(versions.createdAt),
+    })
+    .from(modules)
+    .innerJoin(user, eq(user.id, modules.ownerUserId))
+    .innerJoin(versions, eq(versions.moduleId, modules.id))
+    .groupBy(modules.id)
+    .orderBy(sql`${modules.name} COLLATE NOCASE`);
+  const groups = new Map<number, PublishedGroup>();
+  for (const row of rows) {
+    const owner = viewerOf({ id: row.userId, ...row });
+    if (owner?.kind !== "group" || owner.userId === viewer.userId) continue;
+    let group = groups.get(owner.group);
+    if (!group) {
+      group = { number: owner.group, name: owner.name, modules: [] };
+      groups.set(owner.group, group);
+    }
+    group.modules.push({
+      id: row.moduleId,
+      name: row.module,
+      latest: row.latest ?? 0,
+      updatedAt: row.updatedAt?.getTime() ?? 0,
+    });
+  }
+  return [...groups.values()].sort((a, b) => a.number - b.number);
 }
 
 const NOT_FOUND = "There is no such module";
@@ -145,9 +188,9 @@ export async function latestVersion(
 }
 
 /**
- * The latest version of each module an admin names, as `g<n>_<name>` for a
- * group's or a plain name for the admin's own. Names nobody can see are
- * left out, so another admin's module looks like one that doesn't exist.
+ * The latest version of each module a build names, as `g<n>_<name>` for a
+ * group's or a plain name for the viewer's own. Names nobody can see are
+ * left out, so an admin's module looks like one that doesn't exist.
  */
 export async function fetchBuildModules(
   viewer: Viewer,
@@ -155,7 +198,7 @@ export async function fetchBuildModules(
 ): Promise<Array<FetchedModule>> {
   const found = new Map<string, FetchedModule>();
   for (const name of names) {
-    const target = importTarget(viewer, name);
+    const target = importTarget(name);
     const owner =
       target.kind === "own" ? viewer.userId : await groupUserId(target.group);
     const latest = owner && (await latestVersion(owner, target.name));
@@ -186,7 +229,7 @@ export async function publishModule(
   source: string,
 ): Promise<PublishResult> {
   // The browser assembled it and checked its imports before sending it.
-  const problem = checkStored(viewer, name, source);
+  const problem = checkStored(name, source);
   if (problem) return { ok: false, problem };
 
   // The unique index ignores case, so `TRIG` and `trig` are one module.

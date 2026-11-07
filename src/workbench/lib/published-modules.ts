@@ -2,6 +2,7 @@ import { moduleName } from "@/lib/assembler/linker";
 import type {
   FetchedModule,
   ModuleSummary,
+  PublishedGroup,
   PublishResult,
   VersionSource,
   VersionSummary,
@@ -10,10 +11,12 @@ import type {
 /** How the workbench reaches published modules; replaced in tests. */
 export type ModulesBackend = {
   listMine: () => Promise<Array<ModuleSummary>>;
+  /** Other groups' published modules (see listPublishedGroups). */
+  listGroups: () => Promise<Array<PublishedGroup>>;
   listVersions: (moduleId: number) => Promise<Array<VersionSummary>>;
   getSource: (versionId: number) => Promise<VersionSource>;
   publish: (name: string, source: string) => Promise<PublishResult>;
-  /** Admins: the latest version of each named module (see BuildLibrary). */
+  /** The latest version of each named module (see BuildLibrary). */
   fetchBuild: (names: Array<string>) => Promise<Array<FetchedModule>>;
 };
 

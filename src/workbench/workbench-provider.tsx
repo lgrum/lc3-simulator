@@ -65,11 +65,11 @@ function createWorkbench(): Workbench {
   assembly.assemble();
   const tabs = new EditorTabs(project, () => machine.getSnapshot().pc);
   const account = new AccountStore(accountBackend);
-  // An admin's builds fetch the published modules they need into lib/.
+  // Signed-in builds fetch the published modules they need into lib/.
   account.subscribe(() => {
     const { viewer } = account.getState();
     assembly.setLibrary(
-      viewer?.kind === "admin"
+      viewer
         ? { namespace: namespaceOf(viewer), fetch: modulesBackend.fetchBuild }
         : null,
     );

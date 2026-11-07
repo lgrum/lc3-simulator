@@ -12,8 +12,8 @@ import {
   localModuleIdentity,
   overrideNote,
   walkLinkSet,
-} from "./admin-build";
-import type { BuildLibrary, FetchedModule } from "./admin-build";
+} from "./library-build";
+import type { BuildLibrary, FetchedModule } from "./library-build";
 import { BreakpointLines } from "./breakpoints";
 import type { ChangeTracker } from "./change-tracker";
 import { createLineMaps } from "./line-map";
@@ -30,7 +30,7 @@ export type Assembly = {
   /** The project revision that was last assembled, to tell when it is stale. */
   revision: number | null;
   /**
-   * Admin builds only: imports nothing provides become RET stubs, so main
+   * Signed-in builds only: imports nothing provides become RET stubs, so main
    * runs before every group has published.
    */
   stubMissing: boolean;
@@ -64,7 +64,7 @@ export class AssemblyStore {
   private readonly listeners = new Set<() => void>();
   /** Breakpoints by source line, put back on their lines after each load. */
   readonly breakpoints: BreakpointLines;
-  /** Where an admin's build fetches published modules; null otherwise. */
+  /** Where a signed-in build fetches published modules; null otherwise. */
   private library: BuildLibrary | null = null;
   /** The fetched modules, by their path in lib/. */
   private fetched = new Map<string, FetchedModule>();
@@ -104,7 +104,7 @@ export class AssemblyStore {
   }
 
   /**
-   * Makes this an admin's build, which fetches the modules the link set needs
+   * Makes this a signed-in build, which fetches the modules the link set needs
    * from the server, or a local one (null). A local build drops lib/.
    */
   setLibrary(library: BuildLibrary | null): void {
@@ -124,7 +124,7 @@ export class AssemblyStore {
   /** Assembles every local file, and the given fetched modules. */
   private collect(fetched: ReadonlyMap<string, FetchedModule>): Collected {
     const { entry, files } = this.project.getProject();
-    const admin = this.library?.namespace;
+    const own = this.library?.namespace;
     const modules: Array<ObjectModule> = [];
     const errors: Array<Diagnostic> = [];
     const notes: Array<Diagnostic> = [];
@@ -146,12 +146,12 @@ export class AssemblyStore {
       add(
         file,
         text,
-        admin
-          ? localModuleIdentity(file, admin, file === entry)
+        own
+          ? localModuleIdentity(file, own, file === entry)
           : { namespace: "local", name: moduleName(file) },
       );
     }
-    if (admin)
+    if (own)
       for (const [path, module] of fetched) {
         // A local file with the same name wins: it may be a fix to test.
         const local = modules.find(
@@ -164,7 +164,7 @@ export class AssemblyStore {
             file: local.file,
             position: null,
             severity: "info",
-            text: overrideNote(local.file, module, admin),
+            text: overrideNote(local.file, module, own),
           });
           continue;
         }
@@ -177,7 +177,7 @@ export class AssemblyStore {
   }
 
   /**
-   * Builds the program. For an admin, first fetches the latest published
+   * Builds the program. When signed in, first fetches the latest published
    * version of every module the link set needs that isn't local, into a
    * read-only lib/ folder; the build otherwise works like assemble().
    */
@@ -234,7 +234,7 @@ export class AssemblyStore {
    * Assembles every file, links from the entry file and loads the image.
    * Each broken file reports its first error, and linking runs only when all
    * files assemble. Returns whether it worked; on failure the machine keeps
-   * the last loaded program. An admin's build uses the modules the last
+   * the last loaded program. A signed-in build uses the modules the last
    * build() fetched.
    */
   assemble(): boolean {

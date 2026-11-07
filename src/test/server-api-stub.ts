@@ -13,6 +13,7 @@ export const accountBackend: AccountBackend = {
 
 export const modulesBackend: ModulesBackend = {
   listMine: () => Promise.resolve([]),
+  listGroups: () => Promise.resolve([]),
   listVersions: offline,
   getSource: offline,
   publish: offline,

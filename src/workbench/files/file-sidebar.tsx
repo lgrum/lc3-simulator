@@ -76,6 +76,7 @@ import {
 } from "../lib/file-names";
 import { unzipProject, zipProject } from "../lib/project-zip";
 import { useAskDialog } from "../ui/ask-dialog";
+import { OtherGroups } from "./other-groups";
 import { useEditorTabs, useProject, useWorkbench } from "../workbench-provider";
 import {
   NEW_FILE_TEXT,
@@ -789,9 +790,10 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
           }}
         />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-0">
+        {/* Fills the space above Other groups: all of it is a drop target. */}
         <SidebarGroup
-          className="min-h-full px-1.5 py-1.5 data-[drop=true]:bg-tint/5"
+          className="flex-1 px-1.5 py-1.5 data-[drop=true]:bg-tint/5"
           data-drop={rootIsTarget}
         >
           <SidebarMenu
@@ -927,6 +929,7 @@ function FilesContent({ onOpenFile }: { onOpenFile?: () => void }) {
             getLabel={moveAnnouncement}
           />
         </SidebarGroup>
+        <OtherGroups onOpenFile={onOpenFile} />
       </SidebarContent>
       {dialog}
     </>

@@ -205,6 +205,7 @@ function extensionsFor(
   workbench: Workbench,
   file: string,
   label: string,
+  isPreview: boolean,
 ): Extension {
   const { assembly, machine } = workbench;
   const common = [
@@ -221,6 +222,13 @@ function extensionsFor(
     trackCursor(workbench, file),
     revealRequests(workbench, file),
   ];
+  // Another group's module: read-only text, outside the project and image.
+  if (isPreview)
+    return [
+      ...common,
+      EditorState.readOnly.of(true),
+      keymap.of([...defaultKeymap, ...searchKeymap]),
+    ];
   if (file === workbench.os.file)
     return [
       // First, so the breakpoint gutter sits left of the line numbers.
@@ -259,24 +267,36 @@ function extensionsFor(
   ];
 }
 
-/** A CodeMirror editor for a project file, or a read-only view of the OS. */
-export function CodeView({ file, label }: { file: string; label: string }) {
+/**
+ * A CodeMirror editor for a project file, or a read-only view of the OS or
+ * of a preview's `source` (see EditorTabs.preview).
+ */
+export function CodeView({
+  file,
+  label,
+  preview,
+}: {
+  file: string;
+  label: string;
+  preview?: string;
+}) {
   const workbench = useWorkbench();
   // Memoized for correctness: a new ref callback would recreate the editor.
   const mount = useCallback(
     (parent: HTMLDivElement | null) => {
       if (!parent) return;
       const isOs = file === workbench.os.file;
+      const isPreview = preview !== undefined;
       const view = new EditorView({
         parent,
         // A file whose tab was closed comes back with its undo history.
         state:
-          (!isOs && workbench.tabs.takeEditorState(file)) ||
+          (!isOs && !isPreview && workbench.tabs.takeEditorState(file)) ||
           EditorState.create({
             doc: isOs
               ? workbench.os.source
-              : (workbench.project.getText(file) ?? ""),
-            extensions: extensionsFor(workbench, file, label),
+              : (preview ?? workbench.project.getText(file) ?? ""),
+            extensions: extensionsFor(workbench, file, label, isPreview),
           }),
       });
       return () => {
@@ -285,7 +305,7 @@ export function CodeView({ file, label }: { file: string; label: string }) {
         view.destroy();
       };
     },
-    [workbench, file, label],
+    [workbench, file, label, preview],
   );
   return <div ref={mount} className="h-full min-h-0" />;
 }

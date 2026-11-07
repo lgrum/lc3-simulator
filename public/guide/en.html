@@ -432,8 +432,14 @@ SIN_PTR .FILL TRIG-SIN
         <ul>
           <li>Labels from <strong>your own group's</strong> other modules.</li>
           <li>
-            Not your own file (just use the label), not <code>main</code>, not
-            the OS (use <code>TRAP</code>), and not other groups' modules.
+            Labels from <strong>other groups' published modules</strong>, by
+            their <code>g&lt;n&gt;_</code> name: group 7's <code>trig</code> is
+            <code>G7_TRIG</code>, so <code>.EXTERNAL G7_TRIG-SIN</code>. You
+            need to be signed in (see <a href="#publishing">Publishing</a>).
+          </li>
+          <li>
+            Not your own file (just use the label), not <code>main</code>, and
+            not the OS (use <code>TRAP</code>).
           </li>
         </ul>
       </section>
@@ -503,8 +509,8 @@ SIN_PTR .FILL TRIG-SIN
       <section id="testing">
         <h2>Testing locally</h2>
         <p>
-          You can't see <code>main</code> or other groups' code, so test with
-          your own small <code>main.asm</code>.
+          You can't see <code>main</code>, so test with your own small
+          <code>main.asm</code>.
         </p>
         <ol>
           <li>
@@ -558,7 +564,10 @@ SIN_PTR .FILL TRIG-SIN
             <strong>latest published</strong> version. Work in progress stays
             private until you publish.
           </li>
-          <li>Other groups never see your code. Professors can.</li>
+          <li>
+            Professors and other groups can read your published versions and use
+            them in their builds.
+          </li>
           <li>
             A module can't be renamed. Publishing under a different file name
             creates a new module.
@@ -569,11 +578,29 @@ SIN_PTR .FILL TRIG-SIN
           </li>
         </ul>
         <p>
-          The professors refer to group 7's <code>trig</code> module as
-          <code>g7_trig</code>, so their <code>main</code> says
-          <code>.EXTERNAL G7_TRIG-SIN</code>. You don't write that form
-          yourself.
+          Everyone refers to group 7's <code>trig</code> module as
+          <code>g7_trig</code>: a professor's <code>main</code>, or another
+          group's module, says <code>.EXTERNAL G7_TRIG-SIN</code>. Names like
+          <code>g7_trig</code> can't be published.
         </p>
+        <ul>
+          <li>
+            <strong>Other groups</strong>, at the bottom of the file sidebar,
+            lists every group's modules. Click one to read its latest version.
+          </li>
+          <li>
+            While you're signed in, a build fetches the latest version of each
+            module you import into a read-only <code>lib/</code> folder.
+          </li>
+          <li>
+            A local file <code>g7_trig.asm</code> replaces group 7's published
+            <code>trig</code> in your builds, to try a change.
+          </li>
+          <li>
+            If a group hasn't published yet, turn on
+            <strong>Stub missing</strong>: calls to its labels just return.
+          </li>
+        </ul>
       </section>
 
       <section id="errors">

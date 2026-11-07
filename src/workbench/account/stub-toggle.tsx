@@ -6,14 +6,14 @@ import { HintedKey } from "../ui/key";
 import { useAccount, useAssembly, useWorkbench } from "../workbench-provider";
 
 /**
- * Admins only: build with RET stubs in place of modules nobody has
+ * Signed-in builds only: build with RET stubs in place of modules nobody has
  * published yet, so main runs before every group is done.
  */
 export function StubToggle() {
   const { assembly } = useWorkbench();
   const { viewer } = useAccount();
   const { stubMissing } = useAssembly();
-  if (viewer?.kind !== "admin") return null;
+  if (!viewer) return null;
   return (
     <HintedKey
       tone="flat"

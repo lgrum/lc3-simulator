@@ -19,7 +19,7 @@ export async function checkModule(
   source: string,
   published: (names: Array<string>) => Promise<Array<string>>,
 ): Promise<PublishProblem | null> {
-  const stored = checkStored(viewer, name, source);
+  const stored = checkStored(name, source);
   if (stored) return stored;
   const assembled = assembleModule(source, {
     file: `${name}.asm`,

@@ -2,8 +2,12 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { createMachineController } from "@/lib/simulator/controller";
 
-import { localModuleIdentity, overrideNote, visibleName } from "./admin-build";
-import type { BuildLibrary, FetchedModule } from "./admin-build";
+import {
+  localModuleIdentity,
+  overrideNote,
+  visibleName,
+} from "./library-build";
+import type { BuildLibrary, FetchedModule } from "./library-build";
 import { AssemblyStore } from "./assembly-store";
 import { ChangeTracker } from "./change-tracker";
 import { ProjectStore, localStorageBackend } from "./project-store";
@@ -56,7 +60,7 @@ SAVE    .BLKW #1
   },
 };
 
-function setup(files: Record<string, string>) {
+function setup(files: Record<string, string>, namespace = ADMIN) {
   const machine = createMachineController();
   const project = new ProjectStore(
     { files, folders: [], entry: "main.asm" },
@@ -65,7 +69,7 @@ function setup(files: Record<string, string>) {
   const store = new AssemblyStore(machine, new ChangeTracker(machine), project);
   const asked: Array<Array<string>> = [];
   const library: BuildLibrary = {
-    namespace: ADMIN,
+    namespace,
     fetch: (names) => {
       asked.push(names);
       return Promise.resolve(
@@ -103,6 +107,19 @@ describe("names in an admin's build", () => {
     expect(overrideNote("work/g7_trig.asm", PUBLISHED.g7_trig, ADMIN)).toBe(
       "Using local g7_trig.asm instead of group 7's published v4",
     );
+  });
+});
+
+describe("AssemblyStore.build for groups", () => {
+  it("fetches another group's module by its g<n>_ name", async () => {
+    const main = MAIN.replace(/.*G3_TRIG.*|.*P3.*/g, "");
+    const { project, store, asked } = setup({ "main.asm": main }, "group:3");
+    expect(await store.build()).toBe(true);
+    expect(asked).toEqual([["g7_trig"], ["g7_helpers"]]);
+    expect([...project.getProject().remote].sort()).toEqual([
+      "lib/g7_helpers.asm",
+      "lib/g7_trig.asm",
+    ]);
   });
 });
 
@@ -197,14 +214,14 @@ describe("AssemblyStore.build for admins", () => {
     expect(await store.setStubMissing(false)).toBe(false);
   });
 
-  it("never stubs outside admin builds", () => {
+  it("never stubs in a local build", () => {
     const { store } = setup({ "main.asm": MAIN });
     store.setLibrary(null);
     void store.setStubMissing(true);
     expect(store.getState().image).toBeNull();
   });
 
-  it("drops lib/ when the admin logs out", async () => {
+  it("drops lib/ when the account logs out", async () => {
     const { project, store } = setup({ "main.asm": MAIN });
     await store.build();
     store.setLibrary(null);

@@ -1,7 +1,7 @@
 import { EditorState } from "@codemirror/state";
 import { describe, expect, it } from "vite-plus/test";
 
-import { EditorTabs } from "./editor-tabs";
+import { EditorTabs, previewId } from "./editor-tabs";
 import { ProjectStore, localStorageBackend } from "./project-store";
 
 function setup() {
@@ -21,16 +21,16 @@ function setup() {
 describe("EditorTabs", () => {
   it("opens the entry file and shows files the user picks", () => {
     const { tabs } = setup();
-    expect(tabs.getState()).toEqual({ open: ["main.asm"], chosen: null });
+    expect(tabs.getState()).toMatchObject({ open: ["main.asm"], chosen: null });
 
     tabs.show("trig.asm");
-    expect(tabs.getState()).toEqual({
+    expect(tabs.getState()).toMatchObject({
       open: ["main.asm", "trig.asm"],
       chosen: { file: "trig.asm", pc: 0x3000 },
     });
 
     tabs.close("trig.asm");
-    expect(tabs.getState()).toEqual({ open: ["main.asm"], chosen: null });
+    expect(tabs.getState()).toMatchObject({ open: ["main.asm"], chosen: null });
   });
 
   it("closes the tab of a deleted file", () => {
@@ -69,5 +69,27 @@ describe("EditorTabs", () => {
     project.move("trig.asm", "lib/trig.asm");
     expect(tabs.getState().open).toEqual(["main.asm", "lib/trig.asm"]);
     expect(tabs.getState().chosen?.file).toBe("lib/trig.asm");
+  });
+
+  it("previews a published module outside the project, one tab per name", () => {
+    const { project, tabs } = setup();
+    const v3 = { name: "g7_trig.asm", version: 3, source: "RET\n" };
+    tabs.preview(v3);
+    const id = previewId("g7_trig.asm");
+    expect(tabs.getState().open).toEqual(["main.asm", id]);
+    expect(tabs.getState().chosen?.file).toBe(id);
+    expect(project.getText(id)).toBeUndefined();
+
+    // Opening it again shows the newer source in the same tab.
+    tabs.preview({ ...v3, version: 4, source: "RET ; v4\n" });
+    expect(tabs.getState().open).toEqual(["main.asm", id]);
+    expect(tabs.getState().previews.get(id)?.version).toBe(4);
+
+    // Project changes keep it open; closing it forgets it.
+    project.deleteFile("trig.asm");
+    expect(tabs.getState().open).toEqual(["main.asm", id]);
+    tabs.close(id);
+    expect(tabs.getState().open).toEqual(["main.asm"]);
+    expect(tabs.getState().previews.size).toBe(0);
   });
 });

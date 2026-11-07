@@ -439,9 +439,16 @@ SIN_PTR .FILL TRIG-SIN
             Etiquetas de los otros módulos de <strong>tu propio grupo</strong>.
           </li>
           <li>
+            Etiquetas de los
+            <strong>módulos publicados por otros grupos</strong>, con su nombre
+            <code>g&lt;n&gt;_</code>: el <code>trig</code> del grupo 7 es
+            <code>G7_TRIG</code>, así que <code>.EXTERNAL G7_TRIG-SIN</code>.
+            Necesitas haber iniciado sesión (mira
+            <a href="#publicar">Publicar</a>).
+          </li>
+          <li>
             No de tu propio archivo (usa la etiqueta directamente), ni de
-            <code>main</code>, ni del sistema operativo (usa <code>TRAP</code>),
-            ni de los módulos de otros grupos.
+            <code>main</code>, ni del sistema operativo (usa <code>TRAP</code>).
           </li>
         </ul>
       </section>
@@ -512,8 +519,8 @@ SIN_PTR .FILL TRIG-SIN
       <section id="pruebas">
         <h2>Probar en local</h2>
         <p>
-          No puedes ver <code>main</code> ni el código de otros grupos, así que
-          prueba con tu propio <code>main.asm</code> pequeño.
+          No puedes ver <code>main</code>, así que prueba con tu propio
+          <code>main.asm</code> pequeño.
         </p>
         <ol>
           <li>
@@ -567,7 +574,10 @@ SIN_PTR .FILL TRIG-SIN
             <strong>última versión publicada</strong>. Lo que tengas a medias
             sigue siendo privado hasta que lo publiques.
           </li>
-          <li>Los demás grupos nunca ven tu código. Los profesores sí.</li>
+          <li>
+            Los profesores y los demás grupos pueden leer tus versiones
+            publicadas y usarlas en sus compilaciones.
+          </li>
           <li>
             Un módulo no se puede renombrar. Publicar con otro nombre de archivo
             crea un módulo nuevo.
@@ -578,10 +588,33 @@ SIN_PTR .FILL TRIG-SIN
           </li>
         </ul>
         <p>
-          Los profesores llaman <code>g7_trig</code> al módulo
-          <code>trig</code> del grupo 7, así que su <code>main</code> dice
-          <code>.EXTERNAL G7_TRIG-SIN</code>. Tú no escribes esa forma.
+          Todos llaman <code>g7_trig</code> al módulo <code>trig</code> del
+          grupo 7: el <code>main</code> de un profesor, o el módulo de otro
+          grupo, dice <code>.EXTERNAL G7_TRIG-SIN</code>. Los nombres como
+          <code>g7_trig</code> no se pueden publicar.
         </p>
+        <ul>
+          <li>
+            <strong>Otros grupos</strong>, al final de la barra lateral de
+            archivos, muestra los módulos de cada grupo. Haz clic en uno para
+            leer su última versión.
+          </li>
+          <li>
+            Con la sesión iniciada, una compilación descarga la última versión
+            de cada módulo que importas en una carpeta <code>lib/</code> de solo
+            lectura.
+          </li>
+          <li>
+            Un archivo local <code>g7_trig.asm</code> reemplaza al
+            <code>trig</code> publicado del grupo 7 en tus compilaciones, para
+            probar un cambio.
+          </li>
+          <li>
+            Si un grupo aún no ha publicado, activa
+            <strong>Simular faltantes</strong>: las llamadas a sus etiquetas
+            solo retornan.
+          </li>
+        </ul>
       </section>
 
       <section id="errores">

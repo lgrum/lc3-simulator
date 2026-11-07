@@ -5,36 +5,37 @@ import type { FetchedModule } from "@/server/modules";
 export type { FetchedModule };
 
 /**
- * An admin's build: group modules and the admin's own published modules are
- * fetched from the server into a read-only `lib/` folder. Imports resolve in
- * each module's owner's namespace (see resolveImport).
+ * A signed-in build (an admin's or a group's): group modules and the
+ * account's own published modules are fetched from the server into a
+ * read-only `lib/` folder. Imports resolve in each module's owner's
+ * namespace (see resolveImport).
  */
 
-/** Where an admin's build gets published modules from. */
+/** Where a signed-in build gets published modules from. */
 export type BuildLibrary = {
-  /** The admin's own namespace, `admin:<userId>`. */
+  /** The account's own namespace: `admin:<userId>` or `group:<n>`. */
   namespace: string;
-  /** The latest version of each visible module, by the admin's names. */
+  /** The latest version of each visible module, by the account's names. */
   fetch: (names: Array<string>) => Promise<Array<FetchedModule>>;
 };
 
 const GROUP_FILE = /^g(\d+)_(.+)$/i;
 
 /**
- * The namespace and name of a local file in an admin's build. A local
+ * The namespace and name of a local file in a signed-in build. A local
  * `g7_trig.asm` is a copy of group 7's `trig`, so its imports resolve in
  * group 7's namespace, and it replaces the published one.
  */
 export function localModuleIdentity(
   file: string,
-  adminNamespace: string,
+  ownNamespace: string,
   isEntry: boolean,
 ): { namespace: string; name: string } {
   const name = moduleName(file);
   const group = isEntry ? null : GROUP_FILE.exec(name);
   return group
     ? { namespace: `group:${Number(group[1])}`, name: group[2] }
-    : { namespace: adminNamespace, name };
+    : { namespace: ownNamespace, name };
 }
 
 /** The file a fetched module goes in: `lib/g7_trig.asm`. */
@@ -42,25 +43,25 @@ export function libraryPath(fetched: FetchedModule): string {
   return `lib/${fetched.name}.asm`;
 }
 
-/** The name an admin uses for a module, or null if it isn't visible. */
+/** The name the account uses for a module, or null if it isn't visible. */
 export function visibleName(
   namespace: string,
   name: string,
-  adminNamespace: string,
+  ownNamespace: string,
 ): string | null {
-  if (namespace === adminNamespace) return name;
+  if (namespace === ownNamespace) return name;
   const group = /^group:(\d+)$/.exec(namespace);
   return group ? `g${group[1]}_${name}` : null;
 }
 
 /**
  * Walks the link set from the entry file. Returns the modules it reaches
- * and the imports no module provides, by the admin's names.
+ * and the imports no module provides, by the account's names.
  */
 export function walkLinkSet(
   modules: ReadonlyArray<ObjectModule>,
   entry: string,
-  adminNamespace: string,
+  ownNamespace: string,
 ): { reached: Array<ObjectModule>; missing: Array<string> } {
   const start = modules.find((module) => module.file === entry);
   if (!start) return { reached: [], missing: [] };
@@ -78,7 +79,7 @@ export function walkLinkSet(
         if (!reached.includes(found)) reached.push(found);
         continue;
       }
-      const name = visibleName(target.namespace, target.name, adminNamespace);
+      const name = visibleName(target.namespace, target.name, ownNamespace);
       if (name) missing.add(name.toLowerCase());
     }
   return { reached, missing: [...missing] };
@@ -88,10 +89,10 @@ export function walkLinkSet(
 export function overrideNote(
   localFile: string,
   fetched: FetchedModule,
-  adminNamespace: string,
+  ownNamespace: string,
 ): string {
   const file = localFile.slice(localFile.lastIndexOf("/") + 1);
-  if (fetched.namespace === adminNamespace)
+  if (fetched.namespace === ownNamespace)
     return `Using local ${file} instead of your published v${fetched.version}`;
   const group = fetched.namespace.slice("group:".length);
   return `Using local ${file} instead of group ${group}'s published v${fetched.version}`;

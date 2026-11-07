@@ -40,9 +40,9 @@ export type ModuleSummary = {
 
 export type VersionSummary = { id: number; number: number; createdAt: number };
 
-/** A published module fetched for an admin's build. */
+/** A published module fetched for a signed-in build. */
 export type FetchedModule = {
-  /** The name the admin's project uses: `g7_trig`, or the admin's `calc`. */
+  /** The name the importer's project uses: `g7_trig`, or its own `calc`. */
   name: string;
   /** `group:7` or `admin:<id>`. */
   namespace: string;
@@ -56,6 +56,13 @@ export const fetchBuildInput = z.object({
   names: z.array(z.string().max(80)).max(200),
 });
 
+/** A group's published modules, as other accounts browse them. */
+export type PublishedGroup = {
+  number: number;
+  name: string;
+  modules: Array<ModuleSummary>;
+};
+
 export type VersionSource = {
   id: number;
   module: string;
@@ -67,7 +74,7 @@ export function isModuleName(name: string): boolean {
   return MODULE_NAME.test(name) && name.toLowerCase() !== OS_MODULE;
 }
 
-/** Group n's module `name` as admins see it: `g<n>_<name>`. */
+/** Group n's module `name` as other accounts name it: `g<n>_<name>`. */
 export function groupModuleName(group: number, name: string): string {
   return `g${group}_${name}`;
 }
@@ -80,7 +87,7 @@ export function parseGroupModuleName(
   return match ? { group: Number(match[1]), name: match[2] } : null;
 }
 
-/** Whether a name is reserved for group modules in admin builds. */
+/** Whether a name is reserved for naming other groups' modules. */
 export function isReservedForGroups(name: string): boolean {
   return parseGroupModuleName(name) !== null;
 }
@@ -91,27 +98,23 @@ export type ImportTarget =
   | { kind: "group"; group: number; name: string };
 
 /**
- * Where an import goes. A group's imports always stay in its own namespace;
- * an admin's `g<n>_<name>` means group n's module, anything else its own.
+ * Where an import goes: `g<n>_<name>` means group n's module, anything else
+ * the importer's own. The same for admins and groups (see resolveImport).
  */
-export function importTarget(viewer: Viewer, name: string): ImportTarget {
-  if (viewer.kind === "admin") {
-    const group = parseGroupModuleName(name);
-    if (group) return { kind: "group", ...group };
-  }
-  return { kind: "own", name };
+export function importTarget(name: string): ImportTarget {
+  const group = parseGroupModuleName(name);
+  return group ? { kind: "group", ...group } : { kind: "own", name };
 }
 
 /** The owner of a module, as far as access rules care. */
 export type Owner = { userId: string; kind: Viewer["kind"] };
 
 /**
- * Who may list and read a module's versions: its owner, and admins for group
- * modules. Admins never see other admins' modules.
+ * Who may list and read a module's versions: its owner, and everyone signed
+ * in for group modules. Admins' modules stay with their owner.
  */
 export function canRead(viewer: Viewer, owner: Owner): boolean {
-  if (owner.userId === viewer.userId) return true;
-  return viewer.kind === "admin" && owner.kind === "group";
+  return owner.userId === viewer.userId || owner.kind === "group";
 }
 
 const encoder = new TextEncoder();
@@ -123,13 +126,11 @@ const encoder = new TextEncoder();
  * request, and a long source takes longer than that to assemble.
  */
 export function checkStored(
-  viewer: Viewer,
   name: string,
   source: string,
 ): PublishProblem | null {
   if (!isModuleName(name)) return { kind: "name" };
-  if (viewer.kind === "admin" && isReservedForGroups(name))
-    return { kind: "reserved" };
+  if (isReservedForGroups(name)) return { kind: "reserved" };
   if (encoder.encode(source).length > MAX_SOURCE_BYTES)
     return { kind: "too-large" };
   return null;
