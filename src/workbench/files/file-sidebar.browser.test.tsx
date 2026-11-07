@@ -169,3 +169,19 @@ describe("Opening a project from .zip", () => {
       .toHaveTextContent("notes.zip isn't a .zip file, or it is damaged.");
   });
 });
+
+describe("A long file list", () => {
+  it("scrolls in the sidebar instead of stretching the editor's row", async () => {
+    const files: Record<string, string> = { "main.asm": "        .END\n" };
+    for (let i = 0; i < 80; i++) files[`mod${i}.asm`] = "RET\n";
+    renderWorkbench({ files, folders: [], entry: "main.asm" });
+    await expect.element(item("mod79.asm")).toBeInTheDocument();
+
+    const bottom = (element: Element) => element.getBoundingClientRect().bottom;
+    const list = document.querySelector("[data-slot=sidebar]");
+    if (!list) throw new Error("No sidebar");
+    const editor = page.getByRole("tab", { name: "main.asm" }).element();
+    expect(bottom(list)).toBeLessThanOrEqual(window.innerHeight);
+    expect(bottom(editor)).toBeLessThanOrEqual(window.innerHeight);
+  });
+});

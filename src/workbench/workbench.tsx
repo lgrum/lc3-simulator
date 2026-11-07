@@ -34,8 +34,12 @@ export function Workbench() {
              */}
             <main className="relative grid min-h-0 grid-cols-[minmax(0,1fr)_500px] divide-x divide-edge max-[1100px]:grid-cols-[minmax(0,1fr)] max-[1100px]:grid-rows-[max-content_max-content] max-[1100px]:divide-x-0 max-[1100px]:divide-y max-[1100px]:overflow-y-auto">
               <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] divide-y divide-seam max-[1100px]:grid-rows-[60dvh_260px]">
-                {/* On phones the file sidebar opens as a sheet instead. */}
-                <div className="grid min-h-0 grid-cols-[240px_minmax(0,1fr)] divide-x divide-edge max-[800px]:grid-cols-[minmax(0,1fr)]">
+                {/*
+                 * On phones the file sidebar opens as a sheet instead. The
+                 * row is held to its space, so a long file list scrolls in
+                 * the sidebar instead of stretching the row.
+                 */}
+                <div className="grid min-h-0 grid-cols-[240px_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] divide-x divide-edge max-[800px]:grid-cols-[minmax(0,1fr)]">
                   <FileSidebar />
                   <EditorPanel />
                 </div>
