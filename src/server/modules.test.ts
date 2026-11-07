@@ -4,12 +4,11 @@ import type { Viewer } from "./access";
 import {
   MAX_SOURCE_BYTES,
   canRead,
-  checkPublish,
+  checkStored,
   importTarget,
   isModuleName,
   parseGroupModuleName,
 } from "./modules";
-import type { ImportTarget } from "./modules";
 
 const group7: Viewer = { kind: "group", userId: "g7", group: 7, name: "G7" };
 const prof: Viewer = {
@@ -24,18 +23,6 @@ const other: Viewer = {
   username: "other",
   name: "Other",
 };
-
-const TRIG = `
-        .EXTERNAL HELPERS-HALF
-SIN     LD R5, PTR
-        JSRR R5
-        RET
-PTR     .FILL HELPERS-HALF
-        .END
-`;
-
-const none = () => Promise.resolve(false);
-const all = () => Promise.resolve(true);
 
 describe("isModuleName", () => {
   it("follows label rules", () => {
@@ -99,63 +86,28 @@ describe("canRead", () => {
   });
 });
 
-describe("checkPublish", () => {
-  it("accepts a group module without checking its imports", async () => {
-    expect(await checkPublish(group7, "trig", TRIG, none)).toBeNull();
+describe("checkStored", () => {
+  const RET = "RET\n";
+
+  it("accepts a valid name and size", () => {
+    expect(checkStored(group7, "trig", RET)).toBeNull();
   });
 
-  it("refuses invalid names", async () => {
-    expect(await checkPublish(group7, "my-trig", TRIG, all)).toEqual({
-      kind: "name",
-    });
+  it("refuses invalid names", () => {
+    expect(checkStored(group7, "my-trig", RET)).toEqual({ kind: "name" });
   });
 
-  it("refuses the reserved g<n>_ names for admins only", async () => {
-    const source = "RET\n.END\n";
-    expect(await checkPublish(prof, "g7_trig", source, all)).toEqual({
-      kind: "reserved",
-    });
-    expect(await checkPublish(group7, "g7_trig", source, all)).toBeNull();
+  it("refuses the reserved g<n>_ names for admins only", () => {
+    expect(checkStored(prof, "g7_trig", RET)).toEqual({ kind: "reserved" });
+    expect(checkStored(group7, "g7_trig", RET)).toBeNull();
   });
 
-  it("refuses sources over 64 KB", async () => {
-    const big = `; ${"x".repeat(MAX_SOURCE_BYTES)}\nRET\n`;
-    expect(await checkPublish(group7, "big", big, all)).toEqual({
-      kind: "too-large",
-    });
+  it("refuses sources over 64 KB", () => {
+    const big = `; ${"x".repeat(MAX_SOURCE_BYTES)}\n${RET}`;
+    expect(checkStored(group7, "big", big)).toEqual({ kind: "too-large" });
   });
 
-  it("refuses assembly errors, with the line", async () => {
-    expect(
-      await checkPublish(group7, "bad", "ADD R1, R2\n", all),
-    ).toMatchObject({ kind: "assembly", line: 1 });
-  });
-
-  it("refuses an admin's imports that don't exist or aren't visible", async () => {
-    const asked: Array<ImportTarget> = [];
-    const problem = await checkPublish(prof, "main", TRIG, (target) => {
-      asked.push(target);
-      return Promise.resolve(false);
-    });
-    expect(problem).toEqual({ kind: "import", module: "HELPERS", line: 2 });
-    expect(asked).toEqual([{ kind: "own", name: "HELPERS" }]);
-  });
-
-  it("accepts an admin's imports of visible modules", async () => {
-    const source = `
-        .EXTERNAL G7_TRIG-SIN
-        LD R5, PTR
-        JSRR R5
-        HALT
-PTR     .FILL G7_TRIG-SIN
-`;
-    const asked: Array<ImportTarget> = [];
-    expect(
-      await checkPublish(prof, "main", source, (target) => {
-        asked.push(target);
-        return Promise.resolve(true);
-      }),
-    ).toBeNull();
-    expect(asked).toEqual([{ kind: "group", group: 7, name: "TRIG" }]);
+  it("doesn't assemble: that happens in the browser", () => {
+    expect(checkStored(group7, "bad", "ADD R1, R2\n")).toBeNull();
   });
 });

@@ -4,15 +4,9 @@ import { namespaceOf, viewerOf } from "./access";
 import type { Viewer } from "./access";
 import { db } from "./db/client.server";
 import { modules, user, versions } from "./db/schema";
-import {
-  canRead,
-  checkPublish,
-  groupModuleName,
-  importTarget,
-} from "./modules";
+import { canRead, checkStored, groupModuleName, importTarget } from "./modules";
 import type {
   FetchedModule,
-  ImportTarget,
   ModuleSummary,
   Owner,
   PublishResult,
@@ -182,13 +176,6 @@ export async function fetchBuildModules(
   return [...found.values()];
 }
 
-/** Whether an import of the viewer's names a published module it can see. */
-async function exists(viewer: Viewer, target: ImportTarget): Promise<boolean> {
-  const owner =
-    target.kind === "own" ? viewer.userId : await groupUserId(target.group);
-  return owner !== null && (await latestVersion(owner, target.name)) !== null;
-}
-
 /**
  * Stores a new version of one of the viewer's modules, creating the module on
  * its first publish. Versions are numbered 1, 2, 3... and never change.
@@ -198,9 +185,8 @@ export async function publishModule(
   name: string,
   source: string,
 ): Promise<PublishResult> {
-  const problem = await checkPublish(viewer, name, source, (target) =>
-    exists(viewer, target),
-  );
+  // The browser assembled it and checked its imports before sending it.
+  const problem = checkStored(viewer, name, source);
   if (problem) return { ok: false, problem };
 
   // The unique index ignores case, so `TRIG` and `trig` are one module.

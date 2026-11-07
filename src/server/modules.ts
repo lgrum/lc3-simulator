@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { assembleModule } from "@/lib/assembler/assemble-source";
 import { OS_MODULE } from "@/lib/assembler/linker";
 
 import type { Viewer } from "./access";
@@ -118,35 +117,20 @@ export function canRead(viewer: Viewer, owner: Owner): boolean {
 const encoder = new TextEncoder();
 
 /**
- * Checks a module before it is stored: its name, size and assembly, and for
- * admins whether every import exists and is visible. `exists` answers whether
- * a published module is there.
+ * The checks the server makes before it stores a module: its name and size.
+ * Assembling and import checks happen in the browser (see checkModule in
+ * src/workbench/lib/publish-check.ts): the Worker has 10 ms of CPU per
+ * request, and a long source takes longer than that to assemble.
  */
-export async function checkPublish(
+export function checkStored(
   viewer: Viewer,
   name: string,
   source: string,
-  exists: (target: ImportTarget) => Promise<boolean>,
-): Promise<PublishProblem | null> {
+): PublishProblem | null {
   if (!isModuleName(name)) return { kind: "name" };
   if (viewer.kind === "admin" && isReservedForGroups(name))
     return { kind: "reserved" };
   if (encoder.encode(source).length > MAX_SOURCE_BYTES)
     return { kind: "too-large" };
-  const assembled = assembleModule(source, {
-    file: `${name}.asm`,
-    entry: false,
-  });
-  if (!assembled.ok)
-    return {
-      kind: "assembly",
-      line: assembled.error.position?.line ?? null,
-      text: assembled.error.text,
-    };
-  // A group's imports are checked only when an admin builds.
-  if (viewer.kind === "group") return null;
-  for (const external of assembled.module.externals.values())
-    if (!(await exists(importTarget(viewer, external.module))))
-      return { kind: "import", module: external.module, line: external.line };
   return null;
 }

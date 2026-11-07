@@ -56,7 +56,7 @@ export const getVersionSourceFn = createServerFn({ method: "GET" })
     return getVersionSource(viewer, data.versionId);
   });
 
-/** Validates a module and stores it as a new version of the viewer's own. */
+/** Stores a new version of the viewer's module; the browser assembled it. */
 export const publishModuleFn = createServerFn({ method: "POST" })
   .validator(publishInput)
   .handler(async ({ data }) => {

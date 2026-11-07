@@ -5,6 +5,7 @@ import { m } from "@/paraglide/messages";
 import type { PublishProblem } from "@/server/modules";
 
 import { baseName } from "../lib/file-names";
+import { checkModule } from "../lib/publish-check";
 import { useAskDialog } from "../ui/ask-dialog";
 import { HintedKey } from "../ui/key";
 import {
@@ -61,6 +62,26 @@ export function PublishButton() {
     if (text === undefined) return;
     const name = baseName(file);
     const module = moduleName(file);
+    const fail = (description: string) =>
+      ask({ title: m.publish_failed({ file: name }), description });
+    const describe = (error: unknown) =>
+      error instanceof Error ? error.message : String(error);
+
+    // Assembled here, not on the server; see checkModule.
+    let problem;
+    try {
+      problem = await checkModule(viewer, module, text, async (names) =>
+        (await workbench.modules.fetchBuild(names)).map((found) => found.name),
+      );
+    } catch (error) {
+      await fail(describe(error));
+      return;
+    }
+    if (problem) {
+      await fail(publishProblemText(name, problem));
+      return;
+    }
+
     const yes = await ask({
       title: m.publish_confirm({ file: name, module }),
       description:
@@ -74,17 +95,11 @@ export function PublishButton() {
     try {
       result = await workbench.modules.publish(module, text);
     } catch (error) {
-      await ask({
-        title: m.publish_failed({ file: name }),
-        description: error instanceof Error ? error.message : String(error),
-      });
+      await fail(describe(error));
       return;
     }
     if (!result.ok) {
-      await ask({
-        title: m.publish_failed({ file: name }),
-        description: publishProblemText(name, result.problem),
-      });
+      await fail(publishProblemText(name, result.problem));
       return;
     }
     workbench.account.notePublished();
