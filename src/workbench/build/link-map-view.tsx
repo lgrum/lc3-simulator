@@ -1,10 +1,17 @@
+import { programWords } from "@/lib/assembler/export";
 import { STUBS_FILE } from "@/lib/assembler/linker";
+import type { LinkMapEntry } from "@/lib/assembler/types";
 import { m } from "@/paraglide/messages";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { EmptyHint } from "../debug/shared";
 import { hex } from "../lib/format";
 import { useAssembly, useWorkbench } from "../workbench-provider";
+
+/** How many words a module takes; `end` is inclusive. */
+function sizeOf({ start, end }: LinkMapEntry): number {
+  return Math.max(0, end - start + 1);
+}
 
 /** Where the last build put each module, in placement order. */
 export function LinkMapView() {
@@ -22,6 +29,9 @@ export function LinkMapView() {
             </th>
             <th scope="col" className="py-1.5 font-medium">
               {m.column_addresses()}
+            </th>
+            <th scope="col" className="py-1.5 pr-4 text-right font-medium">
+              {m.column_size()}
             </th>
             <th scope="col" className="py-1.5 pr-4 font-medium">
               {m.column_labels()}
@@ -57,6 +67,9 @@ export function LinkMapView() {
                   ? m.link_map_no_words({ start: hex(entry.start) })
                   : `${hex(entry.start)}–${hex(entry.end)}`}
               </td>
+              <td className="py-1.5 pr-4 text-right whitespace-nowrap tabular-nums">
+                {m.words_count({ count: sizeOf(entry) })}
+              </td>
               <td className="py-1.5 pr-4">
                 <span className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono">
                   {entry.symbols.map(({ name, addr }) => (
@@ -70,6 +83,18 @@ export function LinkMapView() {
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="border-t border-screen-line text-silk-hi">
+            <th scope="row" className="px-4 py-1.5 text-left font-medium">
+              {m.link_map_total()}
+            </th>
+            <td />
+            <td className="py-1.5 pr-4 text-right font-medium whitespace-nowrap tabular-nums">
+              {m.words_count({ count: programWords(image).words.length })}
+            </td>
+            <td />
+          </tr>
+        </tfoot>
       </table>
     </ScrollArea>
   );

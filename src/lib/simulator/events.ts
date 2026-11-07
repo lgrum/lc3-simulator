@@ -19,3 +19,16 @@ export type StepEvent = {
   stateBefore: ControlState;
   stateAfter: ControlState;
 };
+
+/**
+ * Whether a step ran an instruction of the user's program: one fetched in
+ * user mode. A TRAP counts; the OS code it runs, in supervisor mode, and
+ * interrupt or fault entries don't.
+ */
+export function isUserInstruction(event: StepEvent): boolean {
+  return (
+    event.word !== null &&
+    event.interrupt === undefined &&
+    (event.psrBefore & 0x8000) !== 0
+  );
+}

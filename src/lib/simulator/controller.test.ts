@@ -795,4 +795,26 @@ describe("debugging and undo through the public API", () => {
     machine.writeRegister("R2", 123);
     expect(machine.stepBack()).toBeNull();
   });
+  it("counts the user program's instructions, not the OS code its traps run", () => {
+    const { machine, flush } = fixture(
+      'LEA R0, TEXT\nPUTS\nADD R2, R2, #7\nHALT\nTEXT .STRINGZ "Hi"',
+    );
+    machine.run();
+    flush();
+    // LEA, the PUTS and HALT traps and ADD; none of the OS routines.
+    expect(machine.getSnapshot().userInstructions).toBe(4);
+    machine.reset();
+    expect(machine.getSnapshot().userInstructions).toBe(0);
+  });
+  it("takes a stepped-back user instruction off the count", () => {
+    const { machine } = fixture('LEA R0, TEXT\nPUTS\nHALT\nTEXT .STRINGZ "Hi"');
+    machine.stepInto(); // LEA
+    machine.stepInto(); // TRAP x22
+    machine.stepInto(); // the first OS instruction
+    expect(machine.getSnapshot().userInstructions).toBe(2);
+    machine.stepBack();
+    expect(machine.getSnapshot().userInstructions).toBe(2);
+    machine.stepBack();
+    expect(machine.getSnapshot().userInstructions).toBe(1);
+  });
 });

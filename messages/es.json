@@ -141,6 +141,30 @@
   "status_isa": "LC-3 · Patt y Patel, 3.ª edición",
   "status_mode_user": "modo usuario",
   "status_mode_supervisor": "modo supervisor",
+  "status_instructions": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "instrucción",
+        "countPlural=*": "instrucciones"
+      }
+    }
+  ],
+  "status_instructions_hint": "Instrucciones de tu programa ejecutadas desde que se cargó. Un TRAP cuenta; el código del sistema operativo que ejecuta, no.",
+  "words_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} palabra",
+        "countPlural=*": "{count} palabras"
+      }
+    }
+  ],
+  "status_size_hint": "Memoria que ocupa el programa ensamblado, desde el .ORIG del archivo de entrada hasta su último módulo",
+  "column_size": "Tamaño",
+  "link_map_total": "Total",
   "status_language": "Idioma",
   "editor_loading": "Cargando el editor…",
   "status_theme": "Tema",

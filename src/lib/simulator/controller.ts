@@ -12,6 +12,7 @@ import type {
 } from "./debugger";
 import { installDisplay } from "./devices/display";
 import { Keyboard } from "./devices/keyboard";
+import { isUserInstruction } from "./events";
 import type { StepEvent } from "./events";
 import { History } from "./history";
 import { LC3 } from "./isa/lc3";
@@ -75,6 +76,8 @@ export type MachineSnapshot = {
   canStepBack: boolean;
   /** Instructions per second while running, as set by setSpeed(). */
   speed: number | "max";
+  /** Instructions of the program run in user mode since it was loaded. */
+  userInstructions: number;
   version: number;
 };
 export type Scheduler = {
@@ -125,6 +128,7 @@ class Controller {
   private speed: number | "max" = "max";
   private cancelScheduled: Unsubscribe | undefined;
   private credit = 1;
+  private userInstructions = 0;
   private lastTime = 0;
   private continueAfterInput = false;
 
@@ -187,6 +191,7 @@ class Controller {
     } else this.state.regs[6] = this.state.savedSSP;
     this.debugger.reset();
     this.history.clear();
+    this.userInstructions = 0;
     this.continueAfterInput = false;
     this.status = "paused";
     this.pauseReason = null;
@@ -280,6 +285,7 @@ class Controller {
     const event = this.cpu.step();
     if (!event) return null;
     this.history.push(event, checkpoint);
+    if (isUserInstruction(event)) this.userInstructions++;
     const reason = this.debugger.after(event, this.state);
     this.changed();
     return { event, reason };
@@ -380,6 +386,7 @@ class Controller {
       return null;
     }
     this.debugger.restore(entry.debuggerBefore);
+    if (isUserInstruction(entry.event)) this.userInstructions--;
     this.stop("step-complete", false);
     this.notify();
     return entry.event;
@@ -457,6 +464,7 @@ class Controller {
       pauseReason: this.pauseReason,
       canStepBack: this.history.length > 0,
       speed: this.speed,
+      userInstructions: this.userInstructions,
       version: this.version,
     });
     return this.snapshot;

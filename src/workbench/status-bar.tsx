@@ -1,7 +1,9 @@
 import { BookOpenIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
+import { programWords } from "@/lib/assembler/export";
 import { THEME_PREFERENCES, setThemePreference, useTheme } from "@/lib/theme";
 import type { ThemePreference } from "@/lib/theme";
 import { m } from "@/paraglide/messages";
@@ -10,7 +12,8 @@ import type { Locale } from "@/paraglide/runtime";
 
 import { cn } from "@/lib/utils";
 
-import { useSnapshot } from "./workbench-provider";
+import { hex } from "./lib/format";
+import { useAssembly, useIsStale, useSnapshot } from "./workbench-provider";
 
 const LANGUAGE_NAMES: Record<Locale, string> = {
   en: "English",
@@ -110,23 +113,78 @@ function GuideLink() {
   );
 }
 
+const numberFormat = new Intl.NumberFormat(getLocale());
+
+/**
+ * The user program's instructions run so far. The number sits in a fixed
+ * width of equal-width digits, and the word keeps the width of its plural,
+ * so the bar doesn't shift as it counts.
+ */
+function InstructionCount() {
+  const { userInstructions } = useSnapshot();
+  return (
+    <span title={m.status_instructions_hint()}>
+      <span className="inline-block min-w-[9ch] text-right tabular-nums">
+        {numberFormat.format(userInstructions)}
+      </span>{" "}
+      <span className="inline-grid">
+        <span className="col-start-1 row-start-1">
+          {m.status_instructions({ count: userInstructions })}
+        </span>
+        <span aria-hidden className="invisible col-start-1 row-start-1">
+          {m.status_instructions({ count: 2 })}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/** How many words the last assembled program takes, and where. */
+function ProgramSize() {
+  const { image } = useAssembly();
+  const stale = useIsStale();
+  if (!image) return null;
+  const { origin, words } = programWords(image);
+  return (
+    <span
+      title={stale ? m.editor_modified() : m.status_size_hint()}
+      className={cn("tabular-nums", stale && "text-silk-3")}
+    >
+      {m.words_count({ count: words.length })}
+      {words.length > 0 && (
+        // The range goes first when the bar is short of room.
+        <span className="max-lg:hidden">
+          {" · "}
+          {hex(origin)}–{hex(origin + words.length - 1)}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function StatusBar() {
   const { privilege } = useSnapshot();
   return (
-    // One line at every width: on a phone the ISA label shortens first, so
-    // the bar never grows past its row and the switches stay visible.
-    <footer className="flex min-w-0 items-center gap-5 overflow-hidden border-t border-seam bg-status px-3.5 text-xs whitespace-nowrap text-silk-2">
-      <span className="min-w-0 truncate">{m.status_isa()}</span>
-      <span className="flex-none">
-        {privilege === "user"
-          ? m.status_mode_user()
-          : m.status_mode_supervisor()}
-      </span>
-      <span className="ml-auto flex flex-none items-center gap-4">
-        <GuideLink />
-        <ThemeSwitch />
-        <LanguageSwitch />
-      </span>
+    // One line at every width. When it doesn't fit, as on a phone, it
+    // scrolls sideways like the toolbar; the ISA name goes first.
+    <footer className="relative min-w-0 border-t border-seam bg-status text-xs text-silk-2">
+      <ScrollArea scrollFade fill clampContentMinWidth={false}>
+        <div className="flex h-full w-max min-w-full items-center gap-5 px-3.5 whitespace-nowrap">
+          <span className="max-md:hidden">{m.status_isa()}</span>
+          <span>
+            {privilege === "user"
+              ? m.status_mode_user()
+              : m.status_mode_supervisor()}
+          </span>
+          <InstructionCount />
+          <ProgramSize />
+          <span className="ml-auto flex items-center gap-4">
+            <GuideLink />
+            <ThemeSwitch />
+            <LanguageSwitch />
+          </span>
+        </div>
+      </ScrollArea>
     </footer>
   );
 }

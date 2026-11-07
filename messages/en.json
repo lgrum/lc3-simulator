@@ -141,6 +141,30 @@
   "status_isa": "LC-3 · Patt & Patel, 3rd edition",
   "status_mode_user": "user mode",
   "status_mode_supervisor": "supervisor mode",
+  "status_instructions": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "instruction",
+        "countPlural=*": "instructions"
+      }
+    }
+  ],
+  "status_instructions_hint": "Instructions of your program run since it was loaded. A TRAP counts; the OS code it runs doesn't.",
+  "words_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} word",
+        "countPlural=*": "{count} words"
+      }
+    }
+  ],
+  "status_size_hint": "Memory the assembled program takes, from the entry file's .ORIG through its last module",
+  "column_size": "Size",
+  "link_map_total": "Total",
   "status_language": "Language",
   "editor_loading": "Loading the editor…",
   "status_theme": "Theme",
