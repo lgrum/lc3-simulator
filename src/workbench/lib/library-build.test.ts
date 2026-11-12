@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { createMachineController } from "@/lib/simulator/controller";
 
@@ -225,6 +225,104 @@ describe("AssemblyStore.build for admins", () => {
     const { project, store } = setup({ "main.asm": MAIN });
     await store.build();
     store.setLibrary(null);
+    expect(project.getProject().remote.size).toBe(0);
+  });
+});
+
+describe("AssemblyStore.build progress", () => {
+  /** A server whose answers wait until the test releases them. */
+  function held(files: Record<string, string>) {
+    const machine = createMachineController();
+    const project = new ProjectStore(
+      { files, folders: [], entry: "main.asm" },
+      localStorageBackend(null),
+    );
+    const store = new AssemblyStore(
+      machine,
+      new ChangeTracker(machine),
+      project,
+    );
+    const pending: Array<{ names: Array<string>; answer: () => void }> = [];
+    store.setLibrary({
+      namespace: ADMIN,
+      fetch: (names) =>
+        new Promise((resolve) => {
+          pending.push({
+            names,
+            answer: () =>
+              resolve(
+                names.flatMap((name) => PUBLISHED[name.toLowerCase()] ?? []),
+              ),
+          });
+        }),
+    });
+    const phases: Array<string> = [];
+    store.subscribe(() => {
+      const { building } = store.getState();
+      phases.push(
+        building
+          ? `${building.phase} ${building.done}/${building.total}`
+          : "idle",
+      );
+    });
+    return { project, store, pending, phases };
+  }
+
+  it("counts modules level by level and joins repeated calls", async () => {
+    const { store, pending, phases } = held({ "main.asm": MAIN });
+    const first = store.build();
+    expect(store.build()).toBe(first);
+    expect(store.getState().building).toEqual({
+      phase: "fetching",
+      done: 0,
+      total: 2,
+    });
+    expect(pending).toHaveLength(1);
+
+    pending[0].answer();
+    // group 7's trig imports its helpers: one more module to fetch.
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    expect(store.getState().building).toEqual({
+      phase: "fetching",
+      done: 2,
+      total: 3,
+    });
+
+    pending[1].answer();
+    expect(await first).toBe(true);
+    expect(store.getState().building).toBeNull();
+    expect(phases).toContain("assembling 3/3");
+    expect(phases.at(-1)).toBe("idle");
+  });
+
+  it("asks for many modules in parallel batches", async () => {
+    const main = [
+      "        .ORIG x3000",
+      ...[1, 2, 3, 4, 5, 6].map((n) => `        .EXTERNAL G${n}_X-RUN`),
+      "        HALT",
+      ...[1, 2, 3, 4, 5, 6].map((n) => `P${n}      .FILL G${n}_X-RUN`),
+      "        .END",
+      "",
+    ].join("\n");
+    const { store, pending } = held({ "main.asm": main });
+    const build = store.build();
+    expect(pending.map((request) => request.names.length)).toEqual([4, 2]);
+    pending[1].answer();
+    await vi.waitFor(() =>
+      expect(store.getState().building).toMatchObject({ done: 2, total: 6 }),
+    );
+    pending[0].answer();
+    expect(await build).toBe(false);
+    expect(store.getState().building).toBeNull();
+  });
+
+  it("drops a build for an account that logged out", async () => {
+    const { project, store, pending } = held({ "main.asm": MAIN });
+    const build = store.build();
+    store.setLibrary(null);
+    expect(store.getState().building).toBeNull();
+    pending[0].answer();
+    expect(await build).toBe(false);
     expect(project.getProject().remote.size).toBe(0);
   });
 });

@@ -20,6 +20,18 @@ import { createLineMaps } from "./line-map";
 import type { LineMap } from "./line-map";
 import type { ProjectStore, SavedProject } from "./project-store";
 
+/** How far a signed-in build has got. */
+export type BuildProgress = {
+  /** Fetching published modules, then assembling and linking everything. */
+  phase: "fetching" | "assembling";
+  /**
+   * Modules asked from the server so far, and how many have come back. The
+   * total grows as each level of imports shows what the next one needs.
+   */
+  done: number;
+  total: number;
+};
+
 export type Assembly = {
   /** The image loaded into the machine, from the last successful assemble. */
   image: LinkedImage | null;
@@ -34,10 +46,15 @@ export type Assembly = {
    * runs before every group has published.
    */
   stubMissing: boolean;
+  /** The build in progress, or null. Only signed-in builds take a while. */
+  building: BuildProgress | null;
 };
 
 /** How many rounds of fetching a build may take: one per level of imports. */
 const MAX_FETCH_ROUNDS = 16;
+/** Modules asked per request, and requests in flight at once. */
+const FETCH_BATCH = 4;
+const FETCH_PARALLEL = 4;
 
 /** The modules of a build, or the first error of each broken file. */
 type Collected = {
@@ -53,6 +70,7 @@ const INITIAL: Assembly = {
   diagnostics: [],
   revision: null,
   stubMissing: false,
+  building: null,
 };
 
 /**
@@ -72,6 +90,8 @@ export class AssemblyStore {
   private fetchProblems: Array<Diagnostic> = [];
   /** Counts builds, so a slow one can't overwrite a newer one. */
   private builds = 0;
+  /** The signed-in build in progress, which later calls join. */
+  private running: Promise<boolean> | null = null;
 
   constructor(
     private readonly machine: Pick<
@@ -112,6 +132,10 @@ export class AssemblyStore {
     this.library = library;
     this.fetched = new Map();
     this.fetchProblems = [];
+    // A build for the old account stops at its next step.
+    this.builds++;
+    this.running = null;
+    if (this.state.building) this.publish({ ...this.state, building: null });
     this.project.setRemoteFiles(new Map());
   }
 
@@ -179,16 +203,40 @@ export class AssemblyStore {
   /**
    * Builds the program. When signed in, first fetches the latest published
    * version of every module the link set needs that isn't local, into a
-   * read-only lib/ folder; the build otherwise works like assemble().
+   * read-only lib/ folder; the build otherwise works like assemble(). A call
+   * while a signed-in build runs joins it instead of starting another.
    */
-  async build(): Promise<boolean> {
+  build(): Promise<boolean> {
     const library = this.library;
-    if (!library) return this.assemble();
-    const run = ++this.builds;
+    if (!library) return Promise.resolve(this.assemble());
+    if (this.running) return this.running;
+    const running = this.fetchAndAssemble(library, ++this.builds).finally(
+      () => {
+        if (this.running === running) this.running = null;
+      },
+    );
+    this.running = running;
+    return running;
+  }
+
+  /** Fetches the modules the link set needs, level by level, then builds. */
+  private async fetchAndAssemble(
+    library: BuildLibrary,
+    run: number,
+  ): Promise<boolean> {
     const { entry } = this.project.getProject();
     const fetched = new Map<string, FetchedModule>();
     const asked = new Set<string>();
     const problems: Array<Diagnostic> = [];
+    let done = 0;
+    const progress = (phase: BuildProgress["phase"]) => {
+      if (run === this.builds)
+        this.publish({
+          ...this.state,
+          building: { phase, done, total: asked.size },
+        });
+    };
+    progress("fetching");
     for (let round = 0; round < MAX_FETCH_ROUNDS; round++) {
       const { modules, errors } = this.collect(fetched);
       if (errors.length) break;
@@ -206,9 +254,13 @@ export class AssemblyStore {
       );
       if (wanted.length === 0) break;
       for (const name of wanted) asked.add(name);
+      progress("fetching");
       try {
-        for (const module of await library.fetch(wanted))
-          fetched.set(libraryPath(module), module);
+        await fetchInBatches(library, wanted, (found, count) => {
+          for (const module of found) fetched.set(libraryPath(module), module);
+          done += count;
+          progress("fetching");
+        });
       } catch (error) {
         problems.push({
           file: null,
@@ -218,16 +270,23 @@ export class AssemblyStore {
         });
         break;
       }
-      // A newer build started meanwhile; it will publish its own result.
+      // The account changed meanwhile; this build's result is stale.
       if (run !== this.builds) return false;
     }
+    if (run !== this.builds) return false;
+    done = asked.size;
+    progress("assembling");
+    // Lets the page draw the last step before assembling holds the thread.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     if (run !== this.builds) return false;
     this.fetched = fetched;
     this.fetchProblems = problems;
     this.project.setRemoteFiles(
       new Map([...fetched].map(([path, module]) => [path, module.source])),
     );
-    return this.assemble();
+    const ok = this.assemble();
+    this.publish({ ...this.state, building: null });
+    return ok;
   }
 
   /**
@@ -298,4 +357,29 @@ export class AssemblyStore {
     this.state = state;
     for (const listener of this.listeners) listener();
   }
+}
+
+/**
+ * Fetches `names` in batches of FETCH_BATCH, FETCH_PARALLEL requests at a
+ * time, so each request stays small and progress shows as batches return.
+ */
+async function fetchInBatches(
+  library: BuildLibrary,
+  names: ReadonlyArray<string>,
+  /** Called per batch with the modules found and how many were asked. */
+  onBatch: (found: Array<FetchedModule>, asked: number) => void,
+): Promise<void> {
+  const batches: Array<Array<string>> = [];
+  for (let i = 0; i < names.length; i += FETCH_BATCH)
+    batches.push(names.slice(i, i + FETCH_BATCH));
+  let next = 0;
+  const worker = async () => {
+    while (next < batches.length) {
+      const batch = batches[next++];
+      onBatch(await library.fetch(batch), batch.length);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(FETCH_PARALLEL, batches.length) }, worker),
+  );
 }

@@ -320,5 +320,7 @@
   "other_groups_group": "Group {number} · {name}",
   "other_groups_module_hint": "Open {module} v{version}, read-only. Your build uses it as {module}.",
   "other_groups_open_failed": "Couldn't open {module}.",
-  "editor_preview_hint": "{file}, published v{version}. Read-only and not part of your project."
+  "editor_preview_hint": "{file}, published v{version}. Read-only and not part of your project.",
+  "assemble_fetching": "Fetching published modules: {done} of {total}",
+  "assemble_linking": "Assembling and linking…"
 }

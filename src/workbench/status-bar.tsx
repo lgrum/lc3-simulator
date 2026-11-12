@@ -2,6 +2,7 @@ import { BookOpenIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { programWords } from "@/lib/assembler/export";
 import { THEME_PREFERENCES, setThemePreference, useTheme } from "@/lib/theme";
@@ -12,6 +13,7 @@ import type { Locale } from "@/paraglide/runtime";
 
 import { cn } from "@/lib/utils";
 
+import { buildStatusText } from "./build/build-status";
 import { hex } from "./lib/format";
 import { useAssembly, useIsStale, useSnapshot } from "./workbench-provider";
 
@@ -139,10 +141,20 @@ function InstructionCount() {
   );
 }
 
-/** How many words the last assembled program takes, and where. */
+/**
+ * How many words the last assembled program takes, and where. While a build
+ * runs, what it is doing instead, as the size is about to change.
+ */
 function ProgramSize() {
-  const { image } = useAssembly();
+  const { image, building } = useAssembly();
   const stale = useIsStale();
+  if (building)
+    return (
+      <span className="flex items-center gap-1.5 text-silk tabular-nums">
+        <Spinner aria-hidden className="size-3" />
+        {buildStatusText(building)}
+      </span>
+    );
   if (!image) return null;
   const { origin, words } = programWords(image);
   return (

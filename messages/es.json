@@ -320,5 +320,7 @@
   "other_groups_group": "Grupo {number} · {name}",
   "other_groups_module_hint": "Abrir {module} v{version}, de solo lectura. Tu compilación lo usa como {module}.",
   "other_groups_open_failed": "No se pudo abrir {module}.",
-  "editor_preview_hint": "{file}, versión publicada v{version}. De solo lectura y fuera de tu proyecto."
+  "editor_preview_hint": "{file}, versión publicada v{version}. De solo lectura y fuera de tu proyecto.",
+  "assemble_fetching": "Descargando módulos publicados: {done} de {total}",
+  "assemble_linking": "Ensamblando y enlazando…"
 }
